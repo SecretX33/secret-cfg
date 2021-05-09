@@ -1,2 +1,2 @@
 # secret-cfg
- Library to speed up configuration reading from and write to files.
+Library to speed up configuration creation, reading from, and write to files. 
