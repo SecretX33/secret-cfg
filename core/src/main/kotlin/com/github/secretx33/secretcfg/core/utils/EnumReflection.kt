@@ -1,4 +1,4 @@
-package com.github.secretx33.secretcfg.utils
+package com.github.secretx33.secretcfg.core.utils
 
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
@@ -39,4 +39,4 @@ object EnumReflection {
     }
 }
 
-fun <T : Enum<T>> KClass<out T>.values() = EnumReflection.getValues(this)
+fun <T : Enum<T>> KClass<out T>.fields() = EnumReflection.getValues(this)

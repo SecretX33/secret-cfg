@@ -1,19 +1,18 @@
-package com.github.secretx33.secretcfg.core
+package com.github.secretx33.secretcfg.core.config
 
-import com.github.secretx33.secretcfg.ConfigEnum
-import com.github.secretx33.secretcfg.exception.InvalidDefaultParameter
+import com.github.secretx33.secretcfg.core.exception.InvalidDefaultParameterException
 import java.io.File
 import java.util.function.Predicate
 import java.util.logging.Logger
 import kotlin.reflect.KClass
 
-abstract class BaseEnumCachedConfig<U> (
+abstract class AbstractEnumCachedConfig<U> (
     plugin: Any,
     dataFolder: File,
     path: String,
     logger: Logger,
     copyDefault: Boolean,
-) : BaseCachedConfig(plugin, dataFolder, path, logger, copyDefault) where U : ConfigEnum, U : Enum<U> {
+) : AbstractCachedConfig(plugin, dataFolder, path, logger, copyDefault) where U : ConfigEnum, U : Enum<U> {
 
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> get(key: U, default: Any = key.default): T = get(key.path, default) as T
@@ -72,11 +71,11 @@ abstract class BaseEnumCachedConfig<U> (
     }
 
     private fun wrongDefault(key: U): Nothing {
-        throw InvalidDefaultParameter(WRONG_DEFAULT_PARAMETER_TYPE.format(key.name, key.default::class.simpleName, manager.fileName))
+        throw InvalidDefaultParameterException(WRONG_DEFAULT_PARAMETER_TYPE.format(key.name, key.default::class.simpleName, manager.fileName))
     }
 
     private fun wrongDefault(key: U, expectedType: KClass<*>): Nothing {
-        throw InvalidDefaultParameter(WRONG_DEFAULT_PARAMETER_TYPE_KNOWN_TYPE.format(key.name, expectedType::class.simpleName, key.default::class.simpleName, manager.fileName))
+        throw InvalidDefaultParameterException(WRONG_DEFAULT_PARAMETER_TYPE_KNOWN_TYPE.format(key.name, expectedType::class.simpleName, key.default::class.simpleName, manager.fileName))
     }
 
     private companion object {

@@ -1,8 +1,10 @@
-package com.github.secretx33.secretcfg.core
+package com.github.secretx33.secretcfg.core.manager
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.spongepowered.configurate.CommentedConfigurationNode
 import org.spongepowered.configurate.yaml.NodeStyle
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader
@@ -38,6 +40,7 @@ class YamlManager (
     val file: File = File(dataFolder, relativePath)
     private val loader = YamlConfigurationLoader.builder().indent(2).nodeStyle(NodeStyle.BLOCK).file(file).defaultOptions { it.shouldCopyDefaults(copyDefault) }.build()
     private var root = loader.load()
+    private val lock = Mutex()
 
     init { reload() }
 
@@ -64,71 +67,73 @@ class YamlManager (
         writeBytes(internalFile.readBytes())
     }
 
-    fun get(path: String): Any? = root.parseNode(path).get(Any::class.java)
+    fun get(key: String): Any? = root.parseNode(key).get(Any::class.java)
 
-    fun get(path: String, default: Any): Any = get(path) ?: default
+    fun get(key: String, default: Any): Any = get(key) ?: default
 
-    fun getBoolean(path: String): Boolean? = root.parseNode(path).get(Boolean::class.java)
+    fun getBoolean(key: String): Boolean? = root.parseNode(key).get(Boolean::class.java)
 
-    fun getBoolean(path: String, default: Boolean): Boolean = root.parseNode(path).getBoolean(default)
+    fun getBoolean(key: String, default: Boolean): Boolean = root.parseNode(key).getBoolean(default)
 
-    fun getInt(path: String): Int? = root.parseNode(path).get(Int::class.java)
+    fun getInt(key: String): Int? = root.parseNode(key).get(Int::class.java)
 
-    fun getInt(path: String, default: Int): Int = root.parseNode(path).getInt(default)
+    fun getInt(key: String, default: Int): Int = root.parseNode(key).getInt(default)
 
-    fun getFloat(path: String): Float? = root.parseNode(path).get(Float::class.java)
+    fun getFloat(key: String): Float? = root.parseNode(key).get(Float::class.java)
 
-    fun getFloat(path: String, default: Float): Float = root.parseNode(path).getFloat(default)
+    fun getFloat(key: String, default: Float): Float = root.parseNode(key).getFloat(default)
 
-    fun getDouble(path: String): Double? = root.parseNode(path).get(Double::class.java)
+    fun getDouble(key: String): Double? = root.parseNode(key).get(Double::class.java)
 
-    fun getDouble(path: String, default: Double): Double = root.parseNode(path).getDouble(default)
+    fun getDouble(key: String, default: Double): Double = root.parseNode(key).getDouble(default)
 
-    fun getString(path: String): String? = root.parseNode(path).string
+    fun getString(key: String): String? = root.parseNode(key).string
 
-    fun getString(path: String, default: String): String = root.parseNode(path).getString(default)
+    fun getString(key: String, default: String): String = root.parseNode(key).getString(default)
 
-    fun getStringList(path: String, default: List<String> = emptyList()): List<String>
-        = root.parseNode(path).getList(String::class.java) ?: default
+    fun getStringList(key: String, default: List<String> = emptyList()): List<String>
+        = root.parseNode(key).getList(String::class.java) ?: default
 
-    fun getStringSet(path: String, default: Set<String> = emptySet()): Set<String>
-        = root.parseNode(path).getList(String::class.java)?.toSet() ?: default
+    fun getStringSet(key: String, default: Set<String> = emptySet()): Set<String>
+        = root.parseNode(key).getList(String::class.java)?.toSet() ?: default
 
-    fun set(path: String, value: Any) = root.parseNode(path).set(value)
+    fun set(key: String, value: Any) = root.parseNode(key).set(value)
 
-    fun setBoolean(path: String, value: Boolean) = root.parseNode(path).set(Boolean::class.java, value)
+    fun setBoolean(key: String, value: Boolean) = root.parseNode(key).set(Boolean::class.java, value)
 
-    fun setInt(path: String, value: Int) = root.parseNode(path).set(Int::class.java, value)
+    fun setInt(key: String, value: Int) = root.parseNode(key).set(Int::class.java, value)
 
-    fun setDouble(path: String, value: Double) = root.parseNode(path).set(Double::class.java, value)
+    fun setDouble(key: String, value: Double) = root.parseNode(key).set(Double::class.java, value)
 
-    fun setString(path: String, value: String) = root.parseNode(path).set(String::class.java, value)
+    fun setString(key: String, value: String) = root.parseNode(key).set(String::class.java, value)
 
-    fun setStringList(path: String, value: List<String>) {
-        root.parseNode(path).setList(String::class.java, value)
+    fun setStringList(key: String, value: List<String>) {
+        root.parseNode(key).setList(String::class.java, value)
     }
 
-    fun setStringSet(path: String, value: Set<String>) {
-        setStringList(path, value.toList())
+    fun setStringSet(key: String, value: Set<String>) {
+        setStringList(key, value.toList())
     }
 
-    fun contains(path: String): Boolean = get(path) != null
+    fun contains(key: String): Boolean = get(key) != null
 
     private fun CommentedConfigurationNode.parseNode(path: String) = node(path.split('.'))
 
     fun save() = CoroutineScope(Dispatchers.IO).launch {
-        try {
-            file.createIfMissing()
-            val oldFile = file.getLines()
-            val comments = parseFileComments(oldFile)
-            // commit all changes made to the file, erasing the comments in the process
-            loader.save(root)
-            // re-add comments to the file
-            val newFile = addCommentsToFile(comments)
-            // and write the file on the disk
-            file.writeLines(newFile)
-        } catch (e: Exception) {
-            logger.log(Level.WARNING, "Error while saving file $fileName", e)
+        lock.withLock {
+            try {
+                file.createIfMissing()
+                val oldFile = file.getLines()
+                val comments = parseFileComments(oldFile)
+                // commit all changes made to the file, erasing the comments in the process
+                loader.save(root)
+                // re-add comments to the file
+                val newFile = addCommentsToFile(comments)
+                // and write the file on the disk
+                file.writeLines(newFile)
+            } catch (e: Exception) {
+                logger.log(Level.WARNING, "Error while saving file $fileName", e)
+            }
         }
     }
 
