@@ -1,11 +1,14 @@
-package com.github.secretx33.sccfg.manager
+package com.github.secretx33.secretcfg.core
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.spongepowered.configurate.CommentedConfigurationNode
 import org.spongepowered.configurate.yaml.NodeStyle
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader
-import java.io.*
+import java.io.File
+import java.io.IOException
+import java.io.InputStream
 import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.math.max
@@ -22,7 +25,7 @@ import kotlin.math.max
  * @property file File the file itself
  * @constructor
  */
-abstract class IOYamlManager (
+class YamlManager (
     private val plugin: Any,
     private val dataFolder: File,
     path: String,
@@ -61,37 +64,57 @@ abstract class IOYamlManager (
         writeBytes(internalFile.readBytes())
     }
 
-    fun get(path: String): Any? = root.node(path.split('.')).get(Any::class.java)
+    fun get(path: String): Any? = root.parseNode(path).get(Any::class.java)
 
-    fun getBoolean(path: String): Boolean? = root.node(path.split('.')).get(Boolean::class.java)
+    fun get(path: String, default: Any): Any = get(path) ?: default
 
-    fun getBoolean(path: String, default: Boolean): Boolean = root.node(path.split('.')).getBoolean(default)
+    fun getBoolean(path: String): Boolean? = root.parseNode(path).get(Boolean::class.java)
 
-    fun getInt(path: String): Int? = root.node(path.split('.')).get(Int::class.java)
+    fun getBoolean(path: String, default: Boolean): Boolean = root.parseNode(path).getBoolean(default)
 
-    fun getInt(path: String, default: Int): Int = root.node(path.split('.')).getInt(default)
+    fun getInt(path: String): Int? = root.parseNode(path).get(Int::class.java)
 
-    fun getDouble(path: String): Double? = root.node(path.split('.')).get(Double::class.java)
+    fun getInt(path: String, default: Int): Int = root.parseNode(path).getInt(default)
 
-    fun getDouble(path: String, default: Double): Double = root.node(path.split('.')).getDouble(default)
+    fun getFloat(path: String): Float? = root.parseNode(path).get(Float::class.java)
 
-    fun getString(path: String): String? = root.node(path.split('.')).string
+    fun getFloat(path: String, default: Float): Float = root.parseNode(path).getFloat(default)
 
-    fun getString(path: String, default: String): String = root.node(path.split('.')).getString(default)
+    fun getDouble(path: String): Double? = root.parseNode(path).get(Double::class.java)
 
-    fun getStringList(path: String): List<String>? = root.node(path.split('.')).getList(String::class.java)
+    fun getDouble(path: String, default: Double): Double = root.parseNode(path).getDouble(default)
 
-    fun getStringList(path: String, default: List<String>): List<String> = root.node(path.split('.')).getList(String::class.java) ?: default
+    fun getString(path: String): String? = root.parseNode(path).string
 
-    fun setBoolean(path: String, value: Boolean) = root.node(path.split('.')).set(Boolean::class.java, value)
+    fun getString(path: String, default: String): String = root.parseNode(path).getString(default)
 
-    fun setInt(path: String, value: Int) = root.node(path.split('.')).set(Int::class.java, value)
+    fun getStringList(path: String, default: List<String> = emptyList()): List<String>
+        = root.parseNode(path).getList(String::class.java) ?: default
 
-    fun setDouble(path: String, value: Double) = root.node(path.split('.')).set(Double::class.java, value)
+    fun getStringSet(path: String, default: Set<String> = emptySet()): Set<String>
+        = root.parseNode(path).getList(String::class.java)?.toSet() ?: default
 
-    fun setString(path: String, value: String) = root.node(path.split('.')).set(String::class.java, value)
+    fun set(path: String, value: Any) = root.parseNode(path).set(value)
 
-    fun setStringList(path: String, value: List<String>) = root.node(path.split('.')).setList(String::class.java, value)
+    fun setBoolean(path: String, value: Boolean) = root.parseNode(path).set(Boolean::class.java, value)
+
+    fun setInt(path: String, value: Int) = root.parseNode(path).set(Int::class.java, value)
+
+    fun setDouble(path: String, value: Double) = root.parseNode(path).set(Double::class.java, value)
+
+    fun setString(path: String, value: String) = root.parseNode(path).set(String::class.java, value)
+
+    fun setStringList(path: String, value: List<String>) {
+        root.parseNode(path).setList(String::class.java, value)
+    }
+
+    fun setStringSet(path: String, value: Set<String>) {
+        setStringList(path, value.toList())
+    }
+
+    fun contains(path: String): Boolean = get(path) != null
+
+    private fun CommentedConfigurationNode.parseNode(path: String) = node(path.split('.'))
 
     fun save() = CoroutineScope(Dispatchers.IO).launch {
         try {

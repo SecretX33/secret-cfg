@@ -1,6 +1,6 @@
-package com.github.secretx33.sccfg
+package com.github.secretx33.secretcfg
 
-interface SecretEnum {
+interface ConfigEnum {
     /**
      * Represents the path of the config
      */
@@ -8,6 +8,7 @@ interface SecretEnum {
 
     /**
      * Represent an alternative value in case the key path is non existent
+     * or contains an invalid value/type
      */
-    val defaultValue: Any
+    val default: Any
 }
