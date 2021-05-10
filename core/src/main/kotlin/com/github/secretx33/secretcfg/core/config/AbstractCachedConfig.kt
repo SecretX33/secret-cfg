@@ -128,9 +128,9 @@ abstract class AbstractCachedConfig (
     @Suppress("UNCHECKED_CAST")
     protected fun <T : Any> filteredCachedSet(key: String, default: Set<T>, filter: Predicate<T>, transformer: (entries: List<String>) -> Collection<T>): Set<T> {
         return cache.getOrPut(key) {
-            // if file doesn't contains specified key, cache and return default instead
+            // if file doesn't contains specified key, return and cache default instead
             if(!manager.contains(key)) return@getOrPut default
-            // get the set from the supplier
+            // map the set using the transformer function
             manager.getStringList(key).let(transformer).filterTo(mutableSetOf()) { filter.test(it) }
         }.let { it as? Set<T> ?: (it as? Iterable<T>)
             ?.filterTo(mutableSetOf()) { item -> filter.test(item) }
@@ -146,9 +146,9 @@ abstract class AbstractCachedConfig (
     @Suppress("UNCHECKED_CAST")
     protected fun <T> filteredCachedList(key: String, default: List<T>, filter: Predicate<T>, transformer: (entries: List<String>) -> Collection<T>): List<T> {
         return cache.getOrPut(key) {
-            // if file doesn't contains specified key, cache and return default instead
+            // if file doesn't contains specified key, return and cache default instead
             if(!manager.contains(key)) return@getOrPut default
-            // map the set using the transformer function
+            // map the list using the transformer function
             manager.getStringList(key).let(transformer).filter { filter.test(it) }
         }.let { it as? List<T> ?: (it as? Iterable<T>)
             ?.filter { item -> filter.test(item) }

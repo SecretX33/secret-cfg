@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.5.0"
-    id("com.github.johnrengelman.shadow") version "6.1.0"
+    id("maven-publish")
 }
 
 allprojects {
@@ -10,20 +10,20 @@ allprojects {
     version = "1.0-SNAPSHOT"
 
     repositories {
-        jcenter()
         mavenCentral()
-        maven { url = uri("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") }
+        jcenter()
         maven { url = uri("https://oss.sonatype.org/content/groups/public/") }
         maven { url = uri("https://repo.codemc.org/repository/maven-public/") }
         maven { url = uri("https://plugins.gradle.org/m2/") }
         maven { url = uri("https://jitpack.io") }
         maven { url = uri("https://maven.enginehub.org/repo/") }
+        mavenLocal()
     }
 }
 
 subprojects {
     apply(plugin = "kotlin")
-    apply(plugin = "com.github.johnrengelman.shadow")
+    apply(plugin = "maven-publish")
 
     dependencies {
         testImplementation(kotlin("test-junit5"))
@@ -45,4 +45,30 @@ subprojects {
     }
 
     tasks.withType<KotlinCompile> { kotlinOptions.jvmTarget = "1.8" }
+
+    val kotlinComponent: SoftwareComponent = components["kotlin"]
+
+    tasks {
+        val sourcesJar by creating(Jar::class) {
+            archiveClassifier.set("sources")
+            from(sourceSets.main.get().allSource)
+        }
+
+        val javadocJar by creating(Jar::class) {
+            dependsOn.add(javadoc)
+            archiveClassifier.set("javadoc")
+            from(javadoc)
+        }
+
+        publishing {
+            publications {
+                create<MavenPublication>("maven") {
+                    from(kotlinComponent)
+
+                    artifact(sourcesJar)
+                    artifact(javadocJar)
+                }
+            }
+        }
+    }
 }

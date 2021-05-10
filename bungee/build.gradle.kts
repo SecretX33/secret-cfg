@@ -1,7 +1,3 @@
 dependencies {
-    implementation(project(":core"))
-}
-
-tasks.shadowJar {
-    archiveFileName.set(rootProject.name + "-bungee.jar")
+    implementation(project(":${rootProject.name}-core"))
 }

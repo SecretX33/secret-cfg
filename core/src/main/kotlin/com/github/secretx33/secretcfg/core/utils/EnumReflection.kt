@@ -6,6 +6,9 @@ import java.lang.invoke.MethodType
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
+/**
+ * Class to make possible access the static method [Enum#values()][Enum.values()] from generic Enum classes in Runtime.
+ */
 object EnumReflection {
 
     private val LOOKUP = MethodHandles.publicLookup()
