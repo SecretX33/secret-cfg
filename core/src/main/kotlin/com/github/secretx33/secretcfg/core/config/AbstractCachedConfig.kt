@@ -2,8 +2,11 @@ package com.github.secretx33.secretcfg.core.config
 
 import com.github.secretx33.secretcfg.core.manager.YamlManager
 import com.github.secretx33.secretcfg.core.exception.DifferentCachedTypeException
-import com.github.secretx33.secretcfg.core.utils.fields
+import com.github.secretx33.secretcfg.core.utils.values
+import io.leangen.geantyref.TypeToken
 import java.io.File
+import java.lang.ClassCastException
+import java.lang.reflect.Type
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Predicate
 import java.util.logging.Logger
@@ -20,7 +23,7 @@ abstract class AbstractCachedConfig (
 ) : BaseCachedConfig {
 
     protected val manager = YamlManager(plugin, dataFolder, path, logger, copyDefault)
-    protected val cache = ConcurrentHashMap<String, Any>()
+    private val cache = ConcurrentHashMap<String, Any>()
 
     override fun reload() {
         manager.reload()
@@ -28,6 +31,8 @@ abstract class AbstractCachedConfig (
     }
 
     override fun has(key: String): Boolean = manager.contains(key)
+
+    override fun contains(key: String): Boolean = has(key)
 
     override fun set(key: String, value: Any) {
         manager.set(key, value)
@@ -39,13 +44,13 @@ abstract class AbstractCachedConfig (
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <T : Any> get(key: String, default: T): T {
+    override fun <T : Any> get(key: String, default: T): T {
         return cache.getOrPut(key) {
-            manager.get(key) as? T ?: run {
+            runCatching { manager.get(key) as T }.getOrNull() ?: run {
                 warnWrongType(key, manager.get(key), default)
                 default
             }
-        }.let { it as? T ?: cacheException(key, it, default) }
+        }.let { runCatching { it as T }.getOrElse { cacheException(key, it, default) } }
     }
 
     override fun getInt(key: String, default: Int, minValue: Int, maxValue: Int): Int
@@ -65,7 +70,7 @@ abstract class AbstractCachedConfig (
 
     override fun <T : Enum<T>> getEnum(key: String, default: T, filter: Predicate<T>): T {
         return cachedEnum(key, default, filter) { enum ->
-            default::class.fields().firstOrNull { it.name.equals(enum, ignoreCase = true) }?.takeIf { filter.test(it) } ?: run {
+            default::class.values().firstOrNull { it.name.equals(enum, ignoreCase = true) }?.takeIf { filter.test(it) } ?: run {
                 warnInvalidEnumEntry(key, enum, default)
                 default
             }
@@ -76,7 +81,7 @@ abstract class AbstractCachedConfig (
         return filteredCachedSet(key, default, filter) {
             // parse the config entry, warning about possibly invalid values
             manager.getStringSet(key).mapNotNullTo(mutableSetOf()) { item ->
-                clazz.fields().firstOrNull { it.name.equals(item, ignoreCase = true) }?.takeIf { filter.test(it) } ?: run {
+                clazz.values().firstOrNull { it.name.equals(item, ignoreCase = true) }?.takeIf { filter.test(it) } ?: run {
                     warnInvalidEnumEntry(key, item)
                     null
                 }
@@ -88,7 +93,7 @@ abstract class AbstractCachedConfig (
         return filteredCachedList(key, default, filter) {
             // parse the config entry, warning about possibly invalid values
             manager.getStringList(key).mapNotNull { item ->
-                clazz.fields().firstOrNull { it.name.equals(item, ignoreCase = true) }?.takeIf { filter.test(it) } ?: run {
+                clazz.values().firstOrNull { it.name.equals(item, ignoreCase = true) }?.takeIf { filter.test(it) } ?: run {
                     warnInvalidEnumEntry(key, item)
                     null
                 }
@@ -97,30 +102,40 @@ abstract class AbstractCachedConfig (
     }
 
     @Suppress("UNCHECKED_CAST")
-    protected fun <T : Enum<T>> cachedEnum(key: String, default: T, filter: Predicate<T>, supplier: (enum: String) -> T?): T {
+    protected fun <T : Enum<T>> cachedEnum(key: String, default: T, filter: Predicate<T>, transformer: (enum: String) -> T?): T {
         return cache.getOrPut(key) {
             manager.getString(key)?.let { enum ->
-                supplier(enum)?.takeIf { filter.test(it) } ?: run {
+                transformer(enum)?.takeIf { filter.test(it) } ?: run {
                     warnInvalidEnumEntry(key, enum, default)
                     default
                 }
             } ?: default
-        }.let { it as? T ?: cacheException(key, it, default) }
+        }.let { runCatching { it as T }.getOrElse { cacheException(key, it, default) } }
     }
 
-    protected fun <T : Enum<T>> cachedEnum(key: String, default: T, supplier: (enum: String) -> T?): T
-        = cachedEnum(key, default, { true }, supplier)
+    protected fun <T : Enum<T>> cachedEnum(key: String, default: T, transformer: (enum: String) -> T?): T
+        = cachedEnum(key, default, { true }, transformer)
 
     @Suppress("UNCHECKED_CAST")
-    protected fun <T: Any> cachedAny(key: String, default: T, supplier: (String) -> T?): T {
+    protected fun <T: Any> cachedStringBased(key: String, default: T, transformer: (String) -> T?): T {
         return cache.getOrPut(key) {
-            manager.getString(key)?.let { value ->
-                supplier(value) ?: run {
-                    warnInvalidEnumEntry(key, value, default)
+            manager.getString(key)?.let {
+                transformer(it) ?: run {
+                    warnInvalidEnumEntry(key, it, default)
                     default
                 }
-            } ?: default
-        }.let { it as? T ?: cacheException(key, it, default) }
+            }
+        }.let { runCatching { it as T }.getOrElse { cacheException(key, it, default) } }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    protected fun <T: Any> cachedAny(key: String, default: T, supplier: () -> T?): T {
+        return cache.getOrPut(key) {
+            supplier() ?: run {
+                warnInvalidEnumEntry(key, manager.getString(key), default)
+                default
+            }
+        }.let { runCatching { it as T }.getOrElse { cacheException(key, cache[key], default) } }
     }
 
     // Get function for Sets
@@ -182,7 +197,7 @@ abstract class AbstractCachedConfig (
             // typed amount is not an integer
             warnWrongType(key, values, default)
             return@getOrPut Pair(default, default)
-        }.let { it as? Pair<Int, Int> ?: cacheException(key, it, default) }
+        }.let { runCatching { it as Pair<Int, Int> }.getOrElse { cacheException(key, it, default) } }
     }
 
     // returns a pair of doubles containing the <Min, Max> value of that property
@@ -191,7 +206,7 @@ abstract class AbstractCachedConfig (
         return cache.getOrPut(key) {
             val values = manager.getString(key) ?: ""
 
-            // if there's no amount field, return pair with default values
+            // if there's no key, return pair with default values
             if(values.isBlank()) return@getOrPut Pair(default, default)
 
             // value is only one value
@@ -208,7 +223,54 @@ abstract class AbstractCachedConfig (
             // typed amount is not a double
             warnWrongType(key, values, default)
             return@getOrPut Pair(default, default)
-        }.let { it as? Pair<Double, Double> ?: cacheException(key, it, default) }
+        }.let { runCatching { it as Pair<Double, Double> }.getOrElse { cacheException(key, it, default) } }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun getIntSequence(key: String, default: Set<Int>, minValue: Int, maxValue: Int): Set<Int> {
+        return cache.getOrPut(key) {
+            val values = manager.getString(key) ?: ""
+
+            // if there's no key, return default set
+            if(values.isBlank()) return@getOrPut default
+
+            // value is only one value
+            SIGNED_INT.matchEntire(values)?.groupValues?.get(1)
+                ?.let { min(maxValue, max(minValue, it.toInt())) }
+                ?.let { return@getOrPut setOf(it) }
+
+            // value is a range of values
+            SIGNED_INT_RANGE.matchEntire(values)?.groupValues
+                ?.subList(1, 3)
+                ?.map { min(maxValue, max(minValue, it.toInt())) }
+                ?.let { return@getOrPut IntRange(it[0], it[1]).toSet() }
+
+            // typed amount is not an integer
+            warnWrongType(key, values, default.joinToString())
+            return@getOrPut Pair(default, default)
+        }.let { runCatching { it as Set<Int> }.getOrElse { cacheException(key, it, default) } }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun getIntSequenceList(key: String, default: Set<Int>, minValue: Int, maxValue: Int): Set<Int> {
+        return cache.getOrPut(key) {
+            // if there's no key, return default values
+            if(!manager.contains(key)) return@getOrPut default
+
+            val values = manager.getStringList(key)
+
+            return@getOrPut values.mapNotNull { range ->
+                SIGNED_INT.matchEntire(range)?.groupValues?.get(1)
+                    ?.let { max(0, it.toInt()) }
+                    ?.let { return@mapNotNull setOf(it) }
+
+                // value is a range of values
+                SIGNED_INT_RANGE.matchEntire(range)?.groupValues
+                    ?.subList(1, 3)
+                    ?.map { max(0, it.toInt()) }
+                    ?.let { return@mapNotNull IntRange(it[0], it[1]).toSet() }
+            }.flatten().filterTo(mutableSetOf()) { it in minValue..maxValue }
+        }.let { runCatching { it as Set<Int> }.getOrElse { cacheException(key, it, default) } }
     }
 
     /**
@@ -218,22 +280,22 @@ abstract class AbstractCachedConfig (
      *
      * @param key String config key of the entry
      * @param default T the default value of the entry
-     * @param got Any? what actually came when method [manager.get][YamlManager.get] was invoked
+     * @param got Any? what actually came when method [YamlManager#get()][YamlManager.get] was invoked
      */
     protected fun <T : Any> warnWrongType(key: String, got: Any?, default: T) {
         logger.warning(CONFIG_TYPE_MISMATCH_WITH_DEFAULT.format(manager.fileName, key, default::class.simpleName, got?.let { it::class.simpleName } ?: "null", manager.fileName, default))
     }
 
-    protected fun warnInvalidEnumEntry(key: String, invalidEntry: String) {
-        logger.warning(INVALID_ENUM_ENTRY.format(manager.fileName, key, invalidEntry, manager.fileName))
+    protected fun warnInvalidEnumEntry(key: String, invalidEntry: String?) {
+        logger.warning(INVALID_ENUM_ENTRY.format(manager.fileName, key, invalidEntry ?: "null", manager.fileName))
     }
 
-    protected fun warnInvalidEnumEntry(key: String, invalidEntry: String, default: Any) {
-        logger.warning(INVALID_ENUM_ENTRY_WITH_DEFAULT.format(manager.fileName, key, invalidEntry, manager.fileName, default))
+    protected fun warnInvalidEnumEntry(key: String, invalidEntry: String?, default: Any) {
+        logger.warning(INVALID_ENUM_ENTRY_WITH_DEFAULT.format(manager.fileName, key, invalidEntry ?: "null", manager.fileName, default))
     }
 
-    protected fun cacheException(key: String, previous: Any, default: Any): Nothing {
-        throw DifferentCachedTypeException(DIFFERENT_CACHED_TYPE.format(key, previous::class.simpleName, default::class.simpleName, manager.fileName))
+    protected fun cacheException(key: String, previous: Any?, default: Any): Nothing {
+        throw DifferentCachedTypeException(DIFFERENT_CACHED_TYPE.format(key, previous?.let { it::class.simpleName } ?: "null", default::class.simpleName, manager.fileName))
     }
 
     protected companion object {

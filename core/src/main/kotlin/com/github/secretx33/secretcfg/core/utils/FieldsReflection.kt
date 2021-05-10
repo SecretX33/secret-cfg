@@ -6,7 +6,7 @@ import kotlin.reflect.KClass
 /**
  * Helper class to make possible get all static fields of a certain type from pseudo-enum classes.
  */
-object FieldsReflection {
+internal object FieldsReflection {
 
     /**
      * Dummy object to be used to get a class public static fields

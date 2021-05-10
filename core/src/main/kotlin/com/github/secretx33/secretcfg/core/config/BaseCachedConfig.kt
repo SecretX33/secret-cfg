@@ -25,6 +25,14 @@ interface BaseCachedConfig {
     fun has(key: String): Boolean
 
     /**
+     * Alias for method [has].
+     *
+     * @since 1.0
+     * @see has
+     */
+    fun contains(key: String): Boolean
+
+    /**
      * Sets a value in a key on the file, does not persist the changes, user must manually call [save] afterwards
      *
      * @param key String The key where the [value] should be saved at
@@ -39,6 +47,16 @@ interface BaseCachedConfig {
      * @since 1.0
      */
     fun save()
+
+    /**
+     * Retrieves a generic value from the config file, or default value if the key is missing
+     *
+     * @param key [String] Where the value is at
+     * @param default [T] A default value in case the specified [key] is missing
+     * @return [T] The retrieved value, or [default] in case the key was missing
+     * @since 1.0
+     */
+    fun <T : Any> get(key: String, default: T): T
 
     /**
      * Retrieves a Int value from the config file, or the default value if the key is missing.
@@ -155,4 +173,32 @@ interface BaseCachedConfig {
      * @since 1.0
      */
     fun getDoubleRange(key: String, default: Double = 0.0, minValue: Double = 0.0, maxValue: Double = Double.MAX_VALUE): Pair<Double, Double>
+
+    /**
+     * Get all integers within the range given by the user, e.g., "0 - 8" would produce a set equivalent to `setOf(0..8)`,
+     * sorted by their natural order.
+     *
+     * @param key String Where the range is stored at
+     * @param default Set<Int> A fallback value in case the range in the path specified is missing or incorrect
+     * @param minValue Int Specify the minimum Int value that can be in the Set
+     * @param maxValue Int Specify the maximum Int value that can be in the Set
+     * @return Set<Int> A sorted set containing all integers within user specified range
+     * @since 1.0
+     */
+    fun getIntSequence(key: String, default: Set<Int> = emptySet(), minValue: Int = 0, maxValue: Int = Int.MAX_VALUE): Set<Int>
+
+    /**
+     * Do the same as the function [getIntSequence], but read the ranges from a string list, instead of a single entry.
+     * A range list containing "0-5" and "10-15" would produce a set equivalent to `setOf(0..5) + setOf(10..15)`, sorted
+     * by their natural order.
+     *
+     * @param key String Where the range is stored at
+     * @param default Set<Int> A fallback value in case the range in the path specified is missing or incorrect
+     * @param minValue Int Specify the minimum Int value that can be in the Set
+     * @param maxValue Int Specify the maximum Int value that can be in the Set
+     * @return Set<Int> A sorted set containing all integers within user specified ranges
+     * @since 1.0
+     * @see getIntSequence
+     */
+    fun getIntSequenceList(key: String, default: Set<Int> = emptySet(), minValue: Int = 0, maxValue: Int = Int.MAX_VALUE): Set<Int>
 }

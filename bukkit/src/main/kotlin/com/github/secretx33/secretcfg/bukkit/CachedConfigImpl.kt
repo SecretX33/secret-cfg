@@ -98,7 +98,7 @@ class CachedConfigImpl (
     // Potion Effect Type
 
     override fun getPotionEffect(key: String, default: PotionEffectType): PotionEffectType
-        = cachedAny(key, default) { type -> XPotion.parsePotionEffectFromString(type)?.type }
+        = cachedStringBased(key, default) { type -> XPotion.parsePotionEffectFromString(type)?.type }
 
     override fun getPotionEffectList(key: String, default: List<PotionEffectType>, filter: Predicate<PotionEffectType>): List<PotionEffectType> {
         return filteredCachedList(key, default, filter) { list ->
@@ -138,7 +138,7 @@ class CachedConfigImpl (
     // Color
 
     override fun getColor(key: String, default: Color): Color
-        = cachedAny(key, default) { color -> colorParser.parse(key, color) }
+        = cachedStringBased(key, default) { color -> colorParser.parse(key, color) }
 
     // parse the color entries, warning about invalid colors
     override fun getColorList(key: String, default: List<Color>): List<Color>
@@ -164,7 +164,7 @@ class CachedConfigImpl (
     // Enchantment
 
     override fun getEnchant(key: String, default: Enchantment): Enchantment
-        = cachedAny(key, default) { enum -> XEnchantment.matchXEnchantment(enum).map { it.parseEnchantment() }?.orElse(null) }
+        = cachedStringBased(key, default) { enchant -> XEnchantment.matchXEnchantment(enchant).map { it.parseEnchantment() }?.orElse(null) }
 
     override fun getEnchantList(key: String, default: List<Enchantment>, filter: Predicate<Enchantment>): List<Enchantment> {
         return filteredCachedList(key, default, filter) { list ->

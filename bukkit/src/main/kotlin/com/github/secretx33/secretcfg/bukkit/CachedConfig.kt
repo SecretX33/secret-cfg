@@ -32,15 +32,15 @@ interface CachedConfig : BaseCachedConfig {
 
     fun getEntityType(key: String, default: EntityType): EntityType
 
-    fun getEntityTypeList(key: String, default: List<EntityType>, filter: Predicate<EntityType> = Predicate { true }): List<EntityType>
+    fun getEntityTypeList(key: String, default: List<EntityType> = emptyList(), filter: Predicate<EntityType> = Predicate { true }): List<EntityType>
 
-    fun getEntityTypeSet(key: String, default: Set<EntityType>, filter: Predicate<EntityType> = Predicate { true }): Set<EntityType>
+    fun getEntityTypeSet(key: String, default: Set<EntityType> = emptySet(), filter: Predicate<EntityType> = Predicate { true }): Set<EntityType>
 
     fun getPotionEffect(key: String, default: PotionEffectType): PotionEffectType
 
-    fun getPotionEffectList(key: String, default: List<PotionEffectType>, filter: Predicate<PotionEffectType> = Predicate { true }): List<PotionEffectType>
+    fun getPotionEffectList(key: String, default: List<PotionEffectType> = emptyList(), filter: Predicate<PotionEffectType> = Predicate { true }): List<PotionEffectType>
 
-    fun getPotionEffectSet(key: String, default: Set<PotionEffectType>, filter: Predicate<PotionEffectType> = Predicate { true }): Set<PotionEffectType>
+    fun getPotionEffectSet(key: String, default: Set<PotionEffectType> = emptySet(), filter: Predicate<PotionEffectType> = Predicate { true }): Set<PotionEffectType>
 
     fun getParticle(key: String, default: Particle): Particle
 
