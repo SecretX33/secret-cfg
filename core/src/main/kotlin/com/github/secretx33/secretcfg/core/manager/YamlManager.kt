@@ -119,20 +119,22 @@ class YamlManager (
 
     private fun CommentedConfigurationNode.parseNode(path: String) = node(path.split('.'))
 
-    fun save() = CoroutineScope(Dispatchers.IO).launch {
-        lock.withLock {
-            try {
-                file.createIfMissing()
-                val oldFile = file.getLines()
-                val comments = parseFileComments(oldFile)
-                // commit all changes made to the file, erasing the comments in the process
-                loader.save(root)
-                // re-add comments to the file
-                val newFile = addCommentsToFile(comments)
-                // and write the file on the disk
-                file.writeLines(newFile)
-            } catch (e: Exception) {
-                logger.log(Level.WARNING, "Error while saving file $fileName", e)
+    fun save() {
+        CoroutineScope(Dispatchers.IO).launch {
+            lock.withLock {
+                try {
+                    file.createIfMissing()
+                    val oldFile = file.getLines()
+                    val comments = parseFileComments(oldFile)
+                    // commit all changes made to the file, erasing the comments in the process
+                    loader.save(root)
+                    // re-add comments to the file
+                    val newFile = addCommentsToFile(comments)
+                    // and write the file on the disk
+                    file.writeLines(newFile)
+                } catch (e: Exception) {
+                    logger.log(Level.WARNING, "Error while saving file $fileName", e)
+                }
             }
         }
     }

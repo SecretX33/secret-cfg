@@ -1,4 +1,4 @@
-package com.github.secretx33.secretcfg.bukkit
+package com.github.secretx33.secretcfg.bukkit.config
 
 import com.github.secretx33.secretcfg.core.config.BaseCachedConfig
 import org.bukkit.Color
@@ -22,7 +22,7 @@ interface CachedConfig : BaseCachedConfig {
 
     fun serialize(key: String, itemList: List<ItemStack>)
 
-    fun deserializeItemList(key: String, default: List<ItemStack> = emptyList()): List<ItemStack>
+    fun deserializeItemList(key: String, default: Supplier<List<ItemStack>> = Supplier { emptyList() }): List<ItemStack>
 
     fun getMaterial(key: String, default: Material): Material
 

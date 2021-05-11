@@ -9,12 +9,13 @@ import java.lang.ClassCastException
 import java.lang.reflect.Type
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Predicate
+import java.util.function.Supplier
 import java.util.logging.Logger
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.reflect.KClass
 
-abstract class AbstractCachedConfig (
+open class AbstractCachedConfig (
     plugin: Any,
     dataFolder: File,
     path: String,
@@ -39,9 +40,13 @@ abstract class AbstractCachedConfig (
         cache[key] = value
     }
 
-    override fun save() {
-        manager.save()
-    }
+    override fun save() = manager.save()
+
+    override val fileName: String
+        get() = manager.fileName
+
+    override val path: String
+        get() = manager.relativePath
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> get(key: String, default: T): T {
@@ -133,7 +138,7 @@ abstract class AbstractCachedConfig (
         return cache.getOrPut(key) {
             supplier() ?: run {
                 warnInvalidEnumEntry(key, manager.getString(key), default)
-                default
+                return@getOrPut default
             }
         }.let { runCatching { it as T }.getOrElse { cacheException(key, cache[key], default) } }
     }
@@ -171,6 +176,23 @@ abstract class AbstractCachedConfig (
     }
 
     protected fun <T> cachedList(key: String, default: List<T>, transformer: (entries: List<String>) -> Collection<T>): List<T>
+        = filteredCachedList(key, default, { true }, transformer)
+
+    // Lazy get function for lists
+
+    @Suppress("UNCHECKED_CAST")
+    protected fun <T> filteredCachedList(key: String, default: Supplier<List<T>>, filter: Predicate<T>, transformer: (entries: List<String>) -> Collection<T>): List<T> {
+        return cache.getOrPut(key) {
+            // if file doesn't contains specified key, return and cache default instead
+            if(!manager.contains(key)) return@getOrPut default.get()
+            // map the list using the transformer function
+            manager.getStringList(key).let(transformer).filter { filter.test(it) }
+        }.let { it as? List<T> ?: (it as? Iterable<T>)
+            ?.filter { item -> filter.test(item) }
+            ?.also { list -> cache[key] = list } ?: cacheException(key, it, default) }
+    }
+
+    protected fun <T> cachedList(key: String, default: Supplier<List<T>>, transformer: (entries: List<String>) -> Collection<T>): List<T>
         = filteredCachedList(key, default, { true }, transformer)
 
     // returns a pair of ints containing the <Min, Max> value of that property

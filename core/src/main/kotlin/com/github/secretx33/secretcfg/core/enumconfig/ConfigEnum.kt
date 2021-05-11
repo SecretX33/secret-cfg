@@ -1,4 +1,4 @@
-package com.github.secretx33.secretcfg.core.config
+package com.github.secretx33.secretcfg.core.enumconfig
 
 interface ConfigEnum {
     /**

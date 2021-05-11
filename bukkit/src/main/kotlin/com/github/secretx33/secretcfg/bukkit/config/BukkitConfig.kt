@@ -1,4 +1,4 @@
-package com.github.secretx33.secretcfg.bukkit
+package com.github.secretx33.secretcfg.bukkit.config
 
 import org.bukkit.plugin.Plugin
 import java.util.logging.Logger

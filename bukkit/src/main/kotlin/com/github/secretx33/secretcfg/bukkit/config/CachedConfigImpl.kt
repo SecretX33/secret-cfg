@@ -1,7 +1,6 @@
-package com.github.secretx33.secretcfg.bukkit
+package com.github.secretx33.secretcfg.bukkit.config
 
 import com.cryptomorin.xseries.XEnchantment
-import com.cryptomorin.xseries.XEntity
 import com.cryptomorin.xseries.XMaterial
 import com.cryptomorin.xseries.XPotion
 import com.github.secretx33.secretcfg.bukkit.extensions.isAir
@@ -50,9 +49,9 @@ class CachedConfigImpl (
             .let { set(key, it) }
     }
 
-    override fun deserializeItemList(key: String, default: List<ItemStack>): List<ItemStack> {
-        return cachedList(key, default) {
-            manager.getStringList(key).mapNotNull { ItemSerializer.fromStringOrNull(it) }
+    override fun deserializeItemList(key: String, default: Supplier<List<ItemStack>>): List<ItemStack> {
+        return cachedList(key, default) { list ->
+            list.mapNotNull { ItemSerializer.fromStringOrNull(it) }
         }
     }
 
