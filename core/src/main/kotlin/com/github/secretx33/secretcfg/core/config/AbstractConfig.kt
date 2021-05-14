@@ -108,6 +108,15 @@ open class AbstractConfig (
         }.let { runCatching { it as T }.getOrElse { cacheException(key, it, default) } }
     }
 
+    override fun getBoolean(key: String, default: Boolean): Boolean {
+        return cache.getOrPut(key) {
+            runCatching { manager.getBoolean(key) as Boolean }.getOrNull() ?: run {
+                warnWrongType(key, manager.get(key), default)
+                default
+            }
+        }.let { runCatching { it as Boolean }.getOrElse { cacheException(key, it, default) } }
+    }
+
     override fun getInt(key: String, default: Int, minValue: Int, maxValue: Int): Int
         = cachedAny(key, default) { (manager.get(key) as? Int)?.let { int -> max(minValue, min(maxValue, int)) } }
 
@@ -315,7 +324,7 @@ open class AbstractConfig (
      * @param got Any? what actually came when method [YamlManager#get()][YamlManager.get] was invoked
      */
     protected fun <T : Any> warnWrongType(key: String, got: Any?, default: T) {
-        logger.warning(CONFIG_TYPE_MISMATCH_WITH_DEFAULT.format(manager.file, key, default::class.simpleName, got?.let { it::class.simpleName } ?: "null", manager.file, default))
+        logger.warning(CONFIG_TYPE_MISMATCH_WITH_DEFAULT.format(file, key, default::class.simpleName, got?.let { it::class.simpleName } ?: "null", file, default))
     }
 
     protected fun warnInvalidEntry(key: String, invalidEntry: String?) {

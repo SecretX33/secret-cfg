@@ -52,6 +52,9 @@ abstract class AbstractEnumConfig<U> (
 
     override fun <T : Any> get(key: U, default: T): T = get(key, default)
 
+    override fun getBoolean(key: U, default: Boolean): Boolean
+        = getBoolean(key.name, default)
+
     override fun getInt(key: U, default: Int, minValue: Int, maxValue: Int): Int
         = getInt(key.name, default, minValue, maxValue)
 
@@ -59,7 +62,7 @@ abstract class AbstractEnumConfig<U> (
         = getDouble(key.name, default, minValue, maxValue)
 
     override fun getFloat(key: U, default: Float, minValue: Float, maxValue: Float): Float
-        = getFloat(key, default, minValue, maxValue)
+        = getFloat(key.name, default, minValue, maxValue)
 
     override fun getString(key: U, default: String): String = getString(key.name, default)
 

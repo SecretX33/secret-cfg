@@ -90,9 +90,19 @@ interface BaseEnumConfig<U> : BaseConfig where U : ConfigEnum, U : Enum<U>  {
     fun <T : Any> get(key: U, default: T): T
 
     /**
-     * Retrieves a Int value from the config file, or the default value if the key is missing.
+     * Retrieves a Boolean value from the config file, or the default value if the key is missing.
      *
-     * @param key [U] Where the Float is at
+     * @param key [U] Where the Boolean is at
+     * @param default [Boolean] A default value in case the specified [key] is missing
+     * @return [Boolean] The retrieved Boolean, or [default] in case the key was missing
+     * @since 1.0
+     */
+    fun getBoolean(key: U, default: Boolean): Boolean
+
+    /**
+     * Retrieves an Int value from the config file, or the default value if the key is missing.
+     *
+     * @param key [U] Where the Int is at
      * @param default [Int] A default value in case the specified [key] is missing
      * @param minValue [Int] Minimum value that can be returned by this function
      * @param maxValue [Int] Maximum value that can be returned by this function

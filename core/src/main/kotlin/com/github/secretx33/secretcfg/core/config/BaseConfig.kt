@@ -153,9 +153,19 @@ interface BaseConfig {
     fun <T : Any> get(key: String, default: T): T
 
     /**
-     * Retrieves a Int value from the config file, or the default value if the key is missing.
+     * Retrieves a Boolean value from the config file, or the default value if the key is missing.
      *
-     * @param key [String] Where the Float is at
+     * @param key [String] Where the Boolean is at
+     * @param default [Boolean] A default value in case the specified [key] is missing
+     * @return [Boolean] The retrieved Boolean, or [default] in case the key was missing
+     * @since 1.0
+     */
+    fun getBoolean(key: String, default: Boolean): Boolean
+
+    /**
+     * Retrieves an Int value from the config file, or the default value if the key is missing.
+     *
+     * @param key [String] Where the Int is at
      * @param default [Int] A default value in case the specified [key] is missing
      * @param minValue [Int] Minimum value that can be returned by this function
      * @param maxValue [Int] Maximum value that can be returned by this function
