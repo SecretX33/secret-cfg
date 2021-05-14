@@ -23,7 +23,7 @@
  */
 package com.github.secretx33.secretcfg.core.enumconfig
 
-import com.github.secretx33.secretcfg.core.config.BaseCachedConfig
+import com.github.secretx33.secretcfg.core.config.BaseConfig
 import com.github.secretx33.secretcfg.core.exception.InvalidDefaultParameterException
 import java.util.function.Predicate
 import kotlin.reflect.KClass
@@ -32,7 +32,7 @@ import kotlin.reflect.KClass
  * Base interface for enum configs to expose cached methods to the consumers
  * @since 1.0
  */
-interface BaseEnumCachedConfig<U> : BaseCachedConfig where U : ConfigEnum, U : Enum<U>  {
+interface BaseEnumConfig<U> : BaseConfig where U : ConfigEnum, U : Enum<U>  {
 
     /**
      * Enum class that hold the config keys
@@ -41,7 +41,7 @@ interface BaseEnumCachedConfig<U> : BaseCachedConfig where U : ConfigEnum, U : E
      */
     val configClass: KClass<U>
 
-    private inline fun <reified T> U.safeDefault(): T = runCatching { default as T }.getOrElse { throw InvalidDefaultParameterException("Default parameter provided for config key '$name' is not from the expected type '${T::class::simpleName}', but instead its type is '${default::class.simpleName}', please fix your default parameter of this key from your ${configClass.simpleName} class of file '$fileName'. If you are seeing this error and are not the developer, you should copy this message and send it to they so they can fix the issue.") }
+    private inline fun <reified T> U.safeDefault(): T = runCatching { default as T }.getOrElse { throw InvalidDefaultParameterException("Default parameter provided for config key '$name' is not from the expected type '${T::class::simpleName}', but instead its type is '${default::class.simpleName}', please fix your default parameter of this key from your ${configClass.simpleName} class of file '$file'. If you are seeing this error and are not the developer, you should copy this message and send it to they so they can fix the issue.") }
 
     /**
      * Checks in the file if a certain key is present

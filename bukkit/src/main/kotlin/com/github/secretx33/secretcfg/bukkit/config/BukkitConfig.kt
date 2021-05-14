@@ -32,8 +32,9 @@ object BukkitConfig {
         plugin: Plugin,
         path: String,
         logger: Logger = plugin.logger,
-        copyDefault: Boolean = true
-    ): CachedConfig {
-        return CachedConfigImpl(plugin, path, logger, copyDefault)
+        copyDefault: Boolean = true,
+        filePresentInJar: Boolean = true,
+    ): Config {
+        return ConfigImpl(plugin, path, logger, copyDefault, filePresentInJar)
     }
 }

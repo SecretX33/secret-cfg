@@ -23,13 +23,12 @@
  */
 package com.github.secretx33.secretcfg.core.config
 
-import com.github.secretx33.secretcfg.core.manager.YamlManager
 import com.github.secretx33.secretcfg.core.exception.DifferentCachedTypeException
+import com.github.secretx33.secretcfg.core.manager.YamlManager
+import com.github.secretx33.secretcfg.core.utils.RangeParser
 import com.github.secretx33.secretcfg.core.utils.values
-import io.leangen.geantyref.TypeToken
 import java.io.File
-import java.lang.ClassCastException
-import java.lang.reflect.Type
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Predicate
 import java.util.function.Supplier
@@ -38,16 +37,17 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.reflect.KClass
 
-open class AbstractCachedConfig (
+open class AbstractConfig (
     plugin: Any,
     dataFolder: File,
     path: String,
-    private val logger: Logger,
+    protected val logger: Logger,
     copyDefault: Boolean,
-) : BaseCachedConfig {
+    filePresentInJar: Boolean,
+) : BaseConfig {
 
-    protected val manager = YamlManager(plugin, dataFolder, path, logger, copyDefault)
-    private val cache = ConcurrentHashMap<String, Any>()
+    protected val manager = YamlManager(plugin, dataFolder, path, logger, copyDefault, filePresentInJar)
+    protected val cache = ConcurrentHashMap<String, Any>()
 
     override fun reload() {
         manager.reload()
@@ -63,13 +63,40 @@ open class AbstractCachedConfig (
         cache[key] = value
     }
 
+    override fun setBoolean(key: String, value: Boolean) {
+        manager.setBoolean(key, value)
+        cache[key] = value
+    }
+
+    override fun setInt(key: String, value: Int) {
+        manager.setInt(key, value)
+        cache[key] = value
+    }
+
+    override fun setDouble(key: String, value: Double) {
+        manager.setDouble(key, value)
+        cache[key] = value
+    }
+
+    override fun setString(key: String, value: String) {
+        manager.setString(key, value)
+        cache[key] = value
+    }
+
     override fun save() = manager.save()
 
-    override val fileName: String
+    override val file: String
         get() = manager.fileName
+
+    override val fileWithoutExtension: String
+        get() = manager.file.nameWithoutExtension
 
     override val path: String
         get() = manager.relativePath
+
+    override fun getKeys(): Set<String> = manager.getKeys()
+
+    override fun getKeys(path: String): Set<String> = manager.getKeys(path)
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> get(key: String, default: T): T {
@@ -91,7 +118,8 @@ open class AbstractCachedConfig (
         = cachedAny(key, default) { (manager.get(key, default) as? Double)?.let { double -> max(minValue, min(maxValue, double)) } }
 
     override fun getString(key: String, default: String): String
-        = cachedAny(key, default) { manager.getString(key) }
+        = cache.getOrPut(key) { manager.getString(key, default) }
+            .let { runCatching { it as String }.getOrElse { cacheException(key, it, default) } }
 
     override fun getStringList(key: String, default: List<String>): List<String>
         = cachedList(key, default) { manager.getStringList(key, default) }
@@ -99,7 +127,7 @@ open class AbstractCachedConfig (
     override fun <T : Enum<T>> getEnum(key: String, default: T, filter: Predicate<T>): T {
         return cachedEnum(key, default, filter) { enum ->
             default::class.values().firstOrNull { it.name.equals(enum, ignoreCase = true) }?.takeIf { filter.test(it) } ?: run {
-                warnInvalidEnumEntry(key, enum, default)
+                warnInvalidEntry(key, enum, default)
                 default
             }
         }
@@ -108,12 +136,12 @@ open class AbstractCachedConfig (
     override fun <T : Enum<T>> getEnumSet(key: String, default: Set<T>, clazz: KClass<T>, filter: Predicate<T>): Set<T> {
         return filteredCachedSet(key, default, filter) {
             // parse the config entry, warning about possibly invalid values
-            manager.getStringSet(key).mapNotNullTo(mutableSetOf()) { item ->
+            manager.getStringSet(key).mapNotNullTo(HashSet()) { item ->
                 clazz.values().firstOrNull { it.name.equals(item, ignoreCase = true) }?.takeIf { filter.test(it) } ?: run {
-                    warnInvalidEnumEntry(key, item)
+                    warnInvalidEntry(key, item)
                     null
                 }
-            }
+            }.let { if(it.isNotEmpty()) EnumSet.copyOf(it) else emptySet() }
         }
     }
 
@@ -122,7 +150,7 @@ open class AbstractCachedConfig (
             // parse the config entry, warning about possibly invalid values
             manager.getStringList(key).mapNotNull { item ->
                 clazz.values().firstOrNull { it.name.equals(item, ignoreCase = true) }?.takeIf { filter.test(it) } ?: run {
-                    warnInvalidEnumEntry(key, item)
+                    warnInvalidEntry(key, item)
                     null
                 }
             }
@@ -134,7 +162,7 @@ open class AbstractCachedConfig (
         return cache.getOrPut(key) {
             manager.getString(key)?.let { enum ->
                 transformer(enum)?.takeIf { filter.test(it) } ?: run {
-                    warnInvalidEnumEntry(key, enum, default)
+                    warnInvalidEntry(key, enum, default)
                     default
                 }
             } ?: default
@@ -149,7 +177,7 @@ open class AbstractCachedConfig (
         return cache.getOrPut(key) {
             manager.getString(key)?.let {
                 transformer(it) ?: run {
-                    warnInvalidEnumEntry(key, it, default)
+                    warnInvalidEntry(key, it, default)
                     default
                 }
             }
@@ -160,7 +188,7 @@ open class AbstractCachedConfig (
     protected fun <T: Any> cachedAny(key: String, default: T, supplier: () -> T?): T {
         return cache.getOrPut(key) {
             supplier() ?: run {
-                warnInvalidEnumEntry(key, manager.getString(key), default)
+                warnInvalidEntry(key, manager.getString(key), default)
                 return@getOrPut default
             }
         }.let { runCatching { it as T }.getOrElse { cacheException(key, cache[key], default) } }
@@ -228,20 +256,8 @@ open class AbstractCachedConfig (
             // if there's no amount field, return pair with default values
             if(values.isBlank()) return@getOrPut Pair(default, default)
 
-            // value is only one value
-            SIGNED_INT.matchEntire(values)?.groupValues?.get(1)
-                ?.let { min(maxValue, max(minValue, it.toInt())) }
-                ?.let { return@getOrPut Pair(it, it) }
-
-            // value is a range of values
-            SIGNED_INT_RANGE.matchEntire(values)?.groupValues
-                ?.subList(1, 3)
-                ?.map { min(maxValue, max(minValue, it.toInt())) }
-                ?.let { return@getOrPut Pair(it[0], max(it[0], it[1])) }
-
             // typed amount is not an integer
-            warnWrongType(key, values, default)
-            return@getOrPut Pair(default, default)
+            return RangeParser.parseInt(values, default, minValue, maxValue) { warnWrongType(key, values, default) }
         }.let { runCatching { it as Pair<Int, Int> }.getOrElse { cacheException(key, it, default) } }
     }
 
@@ -254,20 +270,8 @@ open class AbstractCachedConfig (
             // if there's no key, return pair with default values
             if(values.isBlank()) return@getOrPut Pair(default, default)
 
-            // value is only one value
-            SIGNED_DOUBLE.matchEntire(values)?.groupValues?.get(1)
-                ?.let { min(maxValue, max(minValue, it.toDouble())) }
-                ?.let { return@getOrPut Pair(it, it) }
-
-            // value is a range of values
-            SIGNED_DOUBLE_RANGE.matchEntire(values)?.groupValues
-                ?.subList(1, 3)
-                ?.map { min(maxValue, max(minValue, it.toDouble())) }
-                ?.let { return@getOrPut Pair(it[0], max(it[0], it[1])) }
-
-            // typed amount is not a double
-            warnWrongType(key, values, default)
-            return@getOrPut Pair(default, default)
+            // typed amount is not an integer
+            return RangeParser.parseDouble(values, default, minValue, maxValue) { warnWrongType(key, values, default) }
         }.let { runCatching { it as Pair<Double, Double> }.getOrElse { cacheException(key, it, default) } }
     }
 
@@ -279,20 +283,10 @@ open class AbstractCachedConfig (
             // if there's no key, return default set
             if(values.isBlank()) return@getOrPut default
 
-            // value is only one value
-            SIGNED_INT.matchEntire(values)?.groupValues?.get(1)
-                ?.let { min(maxValue, max(minValue, it.toInt())) }
-                ?.let { return@getOrPut setOf(it) }
-
-            // value is a range of values
-            SIGNED_INT_RANGE.matchEntire(values)?.groupValues
-                ?.subList(1, 3)
-                ?.map { min(maxValue, max(minValue, it.toInt())) }
-                ?.let { return@getOrPut IntRange(it[0], it[1]).toSet() }
-
-            // typed amount is not an integer
-            warnWrongType(key, values, default.joinToString())
-            return@getOrPut Pair(default, default)
+            return RangeParser.parseIntOrNull(values) { warnWrongType(key, values, default.joinToString()) }
+                ?.let { IntRange(it.first, it.second).toHashSet() }
+                // typed amount is not an integer
+                ?: default
         }.let { runCatching { it as Set<Int> }.getOrElse { cacheException(key, it, default) } }
     }
 
@@ -305,15 +299,8 @@ open class AbstractCachedConfig (
             val values = manager.getStringList(key)
 
             return@getOrPut values.mapNotNull { range ->
-                SIGNED_INT.matchEntire(range)?.groupValues?.get(1)
-                    ?.let { max(0, it.toInt()) }
-                    ?.let { return@mapNotNull setOf(it) }
-
-                // value is a range of values
-                SIGNED_INT_RANGE.matchEntire(range)?.groupValues
-                    ?.subList(1, 3)
-                    ?.map { max(0, it.toInt()) }
-                    ?.let { return@mapNotNull IntRange(it[0], it[1]).toSet() }
+                RangeParser.parseIntOrNull(range, minValue, maxValue)
+                    ?.let { IntRange(it.first, it.second).toHashSet() }
             }.flatten().filterTo(mutableSetOf()) { it in minValue..maxValue }
         }.let { runCatching { it as Set<Int> }.getOrElse { cacheException(key, it, default) } }
     }
@@ -328,34 +315,26 @@ open class AbstractCachedConfig (
      * @param got Any? what actually came when method [YamlManager#get()][YamlManager.get] was invoked
      */
     protected fun <T : Any> warnWrongType(key: String, got: Any?, default: T) {
-        logger.warning(CONFIG_TYPE_MISMATCH_WITH_DEFAULT.format(manager.fileName, key, default::class.simpleName, got?.let { it::class.simpleName } ?: "null", manager.fileName, default))
+        logger.warning(CONFIG_TYPE_MISMATCH_WITH_DEFAULT.format(manager.file, key, default::class.simpleName, got?.let { it::class.simpleName } ?: "null", manager.file, default))
     }
 
-    protected fun warnInvalidEnumEntry(key: String, invalidEntry: String?) {
-        logger.warning(INVALID_ENUM_ENTRY.format(manager.fileName, key, invalidEntry ?: "null", manager.fileName))
+    protected fun warnInvalidEntry(key: String, invalidEntry: String?) {
+        logger.warning(INVALID_ENUM_ENTRY.format(file, key, invalidEntry ?: "null", file.substring(0, file.lastIndex - 3)))
     }
 
-    protected fun warnInvalidEnumEntry(key: String, invalidEntry: String?, default: Any) {
-        logger.warning(INVALID_ENUM_ENTRY_WITH_DEFAULT.format(manager.fileName, key, invalidEntry ?: "null", manager.fileName, default))
+    protected fun warnInvalidEntry(key: String, invalidEntry: String?, default: Any) {
+        logger.warning(INVALID_ENUM_ENTRY_WITH_DEFAULT.format(file, key, invalidEntry ?: "null", file.substring(0, file.lastIndex - 3), default))
     }
 
     protected fun cacheException(key: String, previous: Any?, default: Any): Nothing {
-        throw DifferentCachedTypeException(DIFFERENT_CACHED_TYPE.format(key, previous?.let { it::class.simpleName } ?: "null", default::class.simpleName, manager.fileName))
+        throw DifferentCachedTypeException(DIFFERENT_CACHED_TYPE.format(key, previous?.let { it::class.simpleName } ?: "null", default::class.simpleName, file.substring(0, file.lastIndex - 3)))
     }
 
     protected companion object {
-        const val CONFIG_TYPE_MISMATCH_WITH_DEFAULT = "On file %s key '%s', expected value of type '%s' but got '%s' instead, please fix your '%s' configurations and reload the configs, temporarily defaulting to %s."
-        const val INVALID_ENUM_ENTRY = "Error while trying to get file %s entry key '$%s', value passed '%s' is invalid, please fix this entry in the %s and reload the configs."
-        const val INVALID_ENUM_ENTRY_WITH_DEFAULT = "Error while trying to get file %s key '%s', value passed '%s' is invalid, please fix this entry in the %s and reload the configs, temporarily defaulting to %s."
+        const val CONFIG_TYPE_MISMATCH_WITH_DEFAULT = "[%s] On key '%s', expected value of type '%s' but got '%s' instead, please fix your '%s' configurations and reload the configs, temporarily defaulting to %s."
+        const val INVALID_ENUM_ENTRY = "[%s] On key '%s', value passed '%s' is invalid, please fix this entry in the %s and reload the configs."
+        const val INVALID_ENUM_ENTRY_WITH_DEFAULT = "[%s] Error while trying to get key '%s', value passed '%s' is invalid, please fix this entry in the %s and reload the configs, temporarily defaulting to %s."
         const val DIFFERENT_CACHED_TYPE = "Tried to override previous cached value for key '%s' type '%s' with '%s' in file '%s', please check all your get methods for that key and make sure they're all requiring the same type. If you are seeing this error and are not the developer, you should copy this message and send it to they so they can fix the issue."
-
-        // regex matching a range of two integers
-        val SIGNED_INT = """^\s*(-?\d{1,11})\s*$""".toRegex()                                           // "-5"           ->  -5
-        val SIGNED_INT_RANGE = """^\s*(-?\d{1,11}?)\s*-\s*(-?\d{1,11})\s*$""".toRegex()                 // "-5 - -1"      ->  -5 until -1
-
-        // regex matching a range of two doubles
-        val SIGNED_DOUBLE = """^\s*(-?\d+?(?:\.\d+?)?)\s*$""".toRegex()                                 // "-5.0"         ->  -5.0
-        val SIGNED_DOUBLE_RANGE = """^\s*(-?\d+?(?:\.\d+?)?)\s*-\s*(-?\d+?(?:\.\d+)?)\s*$""".toRegex()  // "-5.0 - -1.0"  ->  -5.0 until -1.0
     }
 
 }

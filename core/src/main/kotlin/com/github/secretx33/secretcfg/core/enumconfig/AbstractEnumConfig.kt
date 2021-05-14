@@ -23,7 +23,7 @@
  */
 package com.github.secretx33.secretcfg.core.enumconfig
 
-import com.github.secretx33.secretcfg.core.config.AbstractCachedConfig
+import com.github.secretx33.secretcfg.core.config.AbstractConfig
 import com.github.secretx33.secretcfg.core.exception.InvalidDefaultParameterException
 import java.io.File
 import java.util.function.Predicate
@@ -31,14 +31,15 @@ import java.util.logging.Logger
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
-abstract class AbstractEnumCachedConfig<U> (
+abstract class AbstractEnumConfig<U> (
     plugin: Any,
     dataFolder: File,
     override val configClass: KClass<U>,
     path: String,
     logger: Logger,
     copyDefault: Boolean,
-) : AbstractCachedConfig(plugin, dataFolder, path, logger, copyDefault), BaseEnumCachedConfig<U> where U : ConfigEnum, U : Enum<U>  {
+    filePresentInJar: Boolean,
+) : AbstractConfig(plugin, dataFolder, path, logger, copyDefault, filePresentInJar), BaseEnumConfig<U> where U : ConfigEnum, U : Enum<U>  {
 
     override fun has(key: U): Boolean = has(key.name)
 

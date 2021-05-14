@@ -23,19 +23,17 @@
  */
 package com.github.secretx33.secretcfg.bukkit.config
 
-import com.github.secretx33.secretcfg.core.config.BaseCachedConfig
-import org.bukkit.Color
-import org.bukkit.DyeColor
-import org.bukkit.Material
-import org.bukkit.Particle
+import com.github.secretx33.secretcfg.core.config.BaseConfig
+import org.bukkit.*
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.EntityType
+import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffectType
 import java.util.function.Predicate
 import java.util.function.Supplier
 
-interface CachedConfig : BaseCachedConfig {
+interface Config : BaseConfig {
 
     fun serialize(key: String, item: ItemStack)
 
@@ -88,4 +86,15 @@ interface CachedConfig : BaseCachedConfig {
     fun getEnchantList(key: String, default: List<Enchantment> = emptyList(), filter: Predicate<Enchantment> = Predicate { true }): List<Enchantment>
 
     fun getEnchantSet(key: String, default: Set<Enchantment> = emptySet(), filter: Predicate<Enchantment> = Predicate { true }): Set<Enchantment>
+
+    fun getItemFlags(key: String, default: Set<ItemFlag> = emptySet(), filter: Predicate<ItemFlag> = Predicate { true }): Set<ItemFlag>
+
+    /**
+     * Parse and return a sound string Triple containing <Sound, Volume, Pitch>. String should be formatted as "Sound",
+     * "Sound:Volume" or "Sound:Volume:Pitch".
+     *
+     * @param key String Where the sound is located at
+     * @return Triple<Sound, Float, Float>? The parsed sound if entry was found and contained a valid sound name
+     */
+    fun getSound(key: String): Triple<Sound, Float, Float>?
 }

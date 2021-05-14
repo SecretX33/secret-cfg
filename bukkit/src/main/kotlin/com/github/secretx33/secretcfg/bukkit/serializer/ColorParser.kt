@@ -29,8 +29,9 @@ import java.util.logging.Logger
 
 class ColorParser(private val fileName: String, private val logger: Logger) {
 
-    fun parse(key: String, color: String): Color? {
-        val rgbMatch = COLOR_PATTERN.matchEntire(color)?.groupValues
+    fun parse(key: String, color: String, skipBlankString: Boolean = false): Color? {
+        if(skipBlankString && color.isBlank()) return null
+        val rgbMatch = RGB_COLOR_PATTERN.matchEntire(color)?.groupValues
         // if color to be parsed is RGB (0-255) numbers
         if(rgbMatch != null && rgbMatch.size == 4) {
             return color.toColor(key, rgbMatch)
@@ -56,9 +57,9 @@ class ColorParser(private val fileName: String, private val logger: Logger) {
 
     private companion object {
         const val MALFORMED_COLOR_STRING = "Inside file '%s', seems like you have malformed color string in key '%s', please fix color entry with value '%s' and reload the plugin configurations."
-        const val MALFORMED_RGB_COLOR = "Inside file '%s', seems like you have typoed a invalid number in key '%s', more especifically somewhere in '%s', please only use values between 0 and 255 to write the colors."
+        const val MALFORMED_RGB_COLOR = "Inside file '%s', seems like you have typoed a invalid number in key '%s', more specifically somewhere in '%s', please only use values between 0 and 255 to write the colors."
 
         // matches three numbers, like "0, 255, 128" and try to convert them to Color
-        val COLOR_PATTERN = """^\s*(\d+?),\s*(\d+?),\s*(\d+)\s*$""".toRegex()
+        val RGB_COLOR_PATTERN = """^\s*(\d+?)\s*,\s*(\d+?)\s*,\s*(\d+)\s*$""".toRegex()
     }
 }

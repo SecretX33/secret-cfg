@@ -23,19 +23,21 @@
  */
 package com.github.secretx33.secretcfg.bukkit.enumconfig
 
-import com.github.secretx33.secretcfg.bukkit.config.CachedConfig
-import com.github.secretx33.secretcfg.bukkit.config.CachedConfigImpl
+import com.github.secretx33.secretcfg.core.enumconfig.ConfigEnum
 import org.bukkit.plugin.Plugin
 import java.util.logging.Logger
+import kotlin.reflect.KClass
 
 object BukkitEnumConfig {
 
-    operator fun invoke (
+    operator fun <U> invoke(
         plugin: Plugin,
         path: String,
+        configClass: KClass<U>,
         logger: Logger = plugin.logger,
-        copyDefault: Boolean = true
-    ): CachedConfig {
-        return CachedConfigImpl(plugin, path, logger, copyDefault)
+        copyDefault: Boolean = true,
+        filePresentInJar: Boolean = true,
+    ): EnumConfig<U> where U : ConfigEnum, U : Enum<U> {
+        return EnumConfigImpl(plugin, path, configClass, logger, copyDefault)
     }
 }

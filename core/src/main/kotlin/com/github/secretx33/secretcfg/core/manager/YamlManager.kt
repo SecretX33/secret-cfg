@@ -55,7 +55,8 @@ class YamlManager (
     private val dataFolder: File,
     path: String,
     private val logger: Logger,
-    copyDefault: Boolean,
+    private val copyDefault: Boolean,
+    private val filePresentInJar: Boolean,
 ) {
 
     val fileName: String = path.replace('\\', '/').split('/').last().appendIfMissing(".yml")
@@ -74,7 +75,7 @@ class YamlManager (
             file.createIfMissing()
             root = loader.load()
         } catch (e: Exception) {
-            logger.log(Level.SEVERE, "Error while reloading file $fileName", e)
+            logger.log(Level.SEVERE, "Error while reloading file '$fileName'", e)
         }
     }
 
@@ -83,9 +84,12 @@ class YamlManager (
 
         createParentDirs()
         createNewFile()
+        if(!copyDefault) return
+
         val internalFile: InputStream = plugin.javaClass.classLoader.getResourceAsStream(relativePath)
             ?: plugin.javaClass.classLoader.getResourceAsStream(fileName)
-            ?: throw IllegalArgumentException("resource $fileName was not found")
+            ?: if(filePresentInJar) throw IllegalArgumentException("resource '$fileName' was not found")
+            else return
 
         writeBytes(internalFile.readBytes())
     }
@@ -137,6 +141,10 @@ class YamlManager (
     fun setStringSet(key: String, value: Set<String>) {
         setStringList(key, value.toList())
     }
+
+    fun getKeys(): Set<String> = root.childrenMap().keys.mapNotNull { it as? String }.toHashSet()
+
+    fun getKeys(path: String): Set<String> = root.parseNode(path).childrenList().mapNotNull { it.key() as? String }.toHashSet()
 
     fun contains(key: String): Boolean = get(key) != null
 

@@ -30,14 +30,21 @@ import kotlin.reflect.KClass
  * Base interface to expose cached methods to the consumers
  * @since 1.0
  */
-interface BaseCachedConfig {
+interface BaseConfig {
 
     /**
-     * Name of the config file, with extension.
+     * Name of the file, with extension.
      *
      * @since 1.0
      */
-    val fileName: String
+    val file: String
+
+    /**
+     * Name of the file, without extension.
+     *
+     * @since 1.0
+     */
+    val fileWithoutExtension: String
 
     /**
      * Relative path from the jar perspective.
@@ -79,11 +86,61 @@ interface BaseCachedConfig {
     fun set(key: String, value: Any)
 
     /**
+     * Sets a Boolean in a key on the file, does not persist the changes, user must manually call [save] afterwards
+     *
+     * @param key String The key where the [value] should be saved at
+     * @param value Boolean The boolean to be saved on the [key]
+     * @since 1.0
+     */
+    fun setBoolean(key: String, value: Boolean)
+
+    /**
+     * Sets an Int in a key on the file, does not persist the changes, user must manually call [save] afterwards
+     *
+     * @param key String The key where the [value] should be saved at
+     * @param value Int The int to be saved on the [key]
+     * @since 1.0
+     */
+    fun setInt(key: String, value: Int)
+
+    /**
+     * Sets a value in a key on the file, does not persist the changes, user must manually call [save] afterwards
+     *
+     * @param key String The key where the [value] should be saved at
+     * @param value Double The double to be saved on the [key]
+     * @since 1.0
+     */
+    fun setDouble(key: String, value: Double)
+
+    /**
+     * Sets a String in a key on the file, does not persist the changes, user must manually call [save] afterwards
+     *
+     * @param key String The key where the [value] should be saved at
+     * @param value String The string to be saved on the [key]
+     * @since 1.0
+     */
+    fun setString(key: String, value: String)
+
+    /**
      * Save the currently edited configurations to the file, this operation should not erase any comments of the file.
      *
      * @since 1.0
      */
     fun save()
+
+    /**
+     * Get the keys directly under root.
+     *
+     * @since 1.0
+     */
+    fun getKeys(): Set<String>
+
+    /**
+     * Get the keys directly under path.
+     *
+     * @since 1.0
+     */
+    fun getKeys(path: String): Set<String>
 
     /**
      * Retrieves a generic value from the config file, or default value if the key is missing
@@ -213,7 +270,7 @@ interface BaseCachedConfig {
 
     /**
      * Get all integers within the range given by the user, e.g., "0 - 8" would produce a set equivalent to `setOf(0..8)`,
-     * sorted by their natural order.
+     * unsorted.
      *
      * @param key String Where the range is stored at
      * @param default Set<Int> A fallback value in case the range in the path specified is missing or incorrect
