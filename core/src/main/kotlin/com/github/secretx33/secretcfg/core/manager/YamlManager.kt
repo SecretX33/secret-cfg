@@ -142,9 +142,9 @@ class YamlManager (
         setStringList(key, value.toList())
     }
 
-    fun getKeys(): Set<String> = root.childrenMap().keys.mapNotNull { it as? String }.toHashSet()
+    fun getKeys(): Set<String> = root.childrenMap().keys.mapNotNull { it.toString() }.toHashSet()
 
-    fun getKeys(path: String): Set<String> = root.parseNode(path).childrenList().mapNotNull { it.key() as? String }.toHashSet()
+    fun getKeys(path: String): Set<String> = root.parseNode(path).childrenMap().keys.mapNotNull { it.toString() }.toHashSet()
 
     fun contains(key: String): Boolean = get(key) != null
 
