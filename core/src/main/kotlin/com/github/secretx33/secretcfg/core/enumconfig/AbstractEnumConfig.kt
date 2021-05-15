@@ -41,66 +41,66 @@ abstract class AbstractEnumConfig<U> (
     filePresentInJar: Boolean,
 ) : AbstractConfig(plugin, dataFolder, path, logger, copyDefault, filePresentInJar), BaseEnumConfig<U> where U : ConfigEnum, U : Enum<U>  {
 
-    override fun has(key: U): Boolean = has(key.name)
+    override fun has(key: U): Boolean = has(key.path)
 
-    override fun contains(key: U): Boolean = contains(key.name)
+    override fun contains(key: U): Boolean = contains(key.path)
 
-    override fun set(key: U, value: Any) = set(key.name, value)
+    override fun set(key: U, value: Any) = set(key.path, value)
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> get(key: U): T = get(key.name, runCatching { key.safeDefaultGeneric(key.default::class as KClass<T>) }.getOrElse { wrongDefault(key) })
+    override fun <T : Any> get(key: U): T = get(key.path, runCatching { key.safeDefaultGeneric(key.default::class as KClass<T>) }.getOrElse { wrongDefault(key) })
 
     override fun <T : Any> get(key: U, default: T): T = get(key, default)
 
     override fun getBoolean(key: U, default: Boolean): Boolean
-        = getBoolean(key.name, default)
+        = getBoolean(key.path, default)
 
     override fun getInt(key: U, default: Int, minValue: Int, maxValue: Int): Int
-        = getInt(key.name, default, minValue, maxValue)
+        = getInt(key.path, default, minValue, maxValue)
 
     override fun getDouble(key: U, default: Double, minValue: Double, maxValue: Double): Double
-        = getDouble(key.name, default, minValue, maxValue)
+        = getDouble(key.path, default, minValue, maxValue)
 
     override fun getFloat(key: U, default: Float, minValue: Float, maxValue: Float): Float
-        = getFloat(key.name, default, minValue, maxValue)
+        = getFloat(key.path, default, minValue, maxValue)
 
-    override fun getString(key: U, default: String): String = getString(key.name, default)
+    override fun getString(key: U, default: String): String = getString(key.path, default)
 
-    override fun getStringList(key: U, default: List<String>): List<String> = getStringList(key.name, default)
+    override fun getStringList(key: U, default: List<String>): List<String> = getStringList(key.path, default)
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : Enum<T>> getEnum(key: U, filter: Predicate<T>): T
-        = getEnum(key.name, runCatching { key.safeDefaultGeneric(key.default::class as KClass<T>) }.getOrElse { wrongDefault(key) }, filter)
+        = getEnum(key.path, runCatching { key.safeDefaultGeneric(key.default::class as KClass<T>) }.getOrElse { wrongDefault(key) }, filter)
 
     override fun <T : Enum<T>> getEnum(key: U, default: T, filter: Predicate<T>): T
-        = getEnum(key.name, default, filter)
+        = getEnum(key.path, default, filter)
 
     override fun <T : Enum<T>> getEnumSet(key: U, default: Set<T>, clazz: KClass<T>, filter: Predicate<T>): Set<T>
-        = getEnumSet(key.name, default, clazz, filter)
+        = getEnumSet(key.path, default, clazz, filter)
 
     override fun <T : Enum<T>> getEnumList(key: U, default: List<T>, clazz: KClass<T>, filter: Predicate<T>): List<T>
-        = getEnumList(key.name, default, clazz, filter)
+        = getEnumList(key.path, default, clazz, filter)
 
     override fun getIntRange(key: U, default: Int, minValue: Int, maxValue: Int): Pair<Int, Int>
-        = getIntRange(key.name, default, minValue, maxValue)
+        = getIntRange(key.path, default, minValue, maxValue)
 
     override fun getDoubleRange(key: U, default: Double, minValue: Double, maxValue: Double): Pair<Double, Double>
-        = getDoubleRange(key.name, default, minValue, maxValue)
+        = getDoubleRange(key.path, default, minValue, maxValue)
 
     override fun getIntSequence(key: U, default: Set<Int>, minValue: Int, maxValue: Int): Set<Int>
-        = getIntSequence(key.name, default, minValue, maxValue)
+        = getIntSequence(key.path, default, minValue, maxValue)
 
     override fun getIntSequenceList(key: U, default: Set<Int>, minValue: Int, maxValue: Int): Set<Int>
-        = getIntSequenceList(key.name, default, minValue, maxValue)
+        = getIntSequenceList(key.path, default, minValue, maxValue)
 
     private fun <T : Any> U.safeDefaultGeneric(clazz: KClass<T>): T = runCatching { clazz.cast(default) }.getOrElse { wrongDefault(this)}
 
     private fun wrongDefault(key: U): Nothing {
-        throw InvalidDefaultParameterException(WRONG_DEFAULT_PARAMETER_TYPE.format(key.name, key.default::class.simpleName, configClass::class.simpleName, manager.fileName))
+        throw InvalidDefaultParameterException(WRONG_DEFAULT_PARAMETER_TYPE.format(key.path, key.default::class.simpleName, configClass::class.simpleName, manager.fileName))
     }
 
     private fun wrongDefault(key: U, expectedType: KClass<*>): Nothing {
-        throw InvalidDefaultParameterException(WRONG_DEFAULT_PARAMETER_TYPE_KNOWN_TYPE.format(key.name, expectedType::class.simpleName, key.default::class.simpleName, configClass::class.simpleName, manager.fileName))
+        throw InvalidDefaultParameterException(WRONG_DEFAULT_PARAMETER_TYPE_KNOWN_TYPE.format(key.path, expectedType::class.simpleName, key.default::class.simpleName, configClass::class.simpleName, manager.fileName))
     }
 
     private companion object {

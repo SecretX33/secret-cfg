@@ -97,7 +97,7 @@ interface BaseEnumConfig<U> : BaseConfig where U : ConfigEnum, U : Enum<U>  {
      * @return [Boolean] The retrieved Boolean, or [default] in case the key was missing
      * @since 1.0
      */
-    fun getBoolean(key: U, default: Boolean): Boolean
+    fun getBoolean(key: U, default: Boolean = key.safeDefault()): Boolean
 
     /**
      * Retrieves an Int value from the config file, or the default value if the key is missing.

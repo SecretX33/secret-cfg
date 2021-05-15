@@ -247,78 +247,78 @@ class EnumConfigImpl<U> (
         return Triple(sound, volume.toFloat(), pitch.toFloat()).also { cache[key] = it }
     }
 
-    override fun serialize(key: U, item: ItemStack) = serialize(key.name, item)
+    override fun serialize(key: U, item: ItemStack) = serialize(key.path, item)
 
-    override fun deserializeItem(key: U): ItemStack? = deserializeItem(key.name)
+    override fun deserializeItem(key: U): ItemStack? = deserializeItem(key.path)
 
-    override fun deserializeItem(key: U, default: Supplier<ItemStack>): ItemStack = deserializeItem(key.name, default)
+    override fun deserializeItem(key: U, default: Supplier<ItemStack>): ItemStack = deserializeItem(key.path, default)
 
-    override fun serialize(key: U, itemList: List<ItemStack>) = serialize(key.name, itemList)
+    override fun serialize(key: U, itemList: List<ItemStack>) = serialize(key.path, itemList)
 
     override fun deserializeItemList(key: U, default: Supplier<List<ItemStack>>): List<ItemStack>
-        = deserializeItemList(key.name, default)
+        = deserializeItemList(key.path, default)
 
     override fun getMaterial(key: U, default: Material): Material
-        = getMaterial(key.name, default)
+        = getMaterial(key.path, default)
 
     override fun getMaterialList(key: U, default: List<Material>, filter: Predicate<Material>): List<Material>
-        = getMaterialList(key.name, default, filter)
+        = getMaterialList(key.path, default, filter)
 
     override fun getMaterialSet(key: U, default: Set<Material>, filter: Predicate<Material>): Set<Material>
-        = getMaterialSet(key.name, default, filter)
+        = getMaterialSet(key.path, default, filter)
 
     override fun getEntityType(key: U, default: EntityType): EntityType
-        = getEntityType(key.name, default)
+        = getEntityType(key.path, default)
 
     override fun getEntityTypeList(key: U, default: List<EntityType>, filter: Predicate<EntityType>): List<EntityType>
-        = getEntityTypeList(key.name, default, filter)
+        = getEntityTypeList(key.path, default, filter)
 
     override fun getEntityTypeSet(key: U, default: Set<EntityType>, filter: Predicate<EntityType>): Set<EntityType>
-        = getEntityTypeSet(key.name, default, filter)
+        = getEntityTypeSet(key.path, default, filter)
 
     override fun getPotionEffect(key: U, default: PotionEffectType): PotionEffectType
-        = getPotionEffect(key.name, default)
+        = getPotionEffect(key.path, default)
 
     override fun getPotionEffectList(key: U, default: List<PotionEffectType>, filter: Predicate<PotionEffectType>): List<PotionEffectType>
-        = getPotionEffectList(key.name, default, filter)
+        = getPotionEffectList(key.path, default, filter)
 
     override fun getPotionEffectSet(key: U, default: Set<PotionEffectType>, filter: Predicate<PotionEffectType>): Set<PotionEffectType>
-        = getPotionEffectSet(key.name, default, filter)
+        = getPotionEffectSet(key.path, default, filter)
 
-    override fun getParticle(key: U, default: Particle): Particle = getParticle(key.name, default)
+    override fun getParticle(key: U, default: Particle): Particle = getParticle(key.path, default)
 
     override fun getParticleList(key: U, default: List<Particle>): List<Particle>
-        = getParticleList(key.name, default)
+        = getParticleList(key.path, default)
 
     override fun getParticleSet(key: U, default: Set<Particle>): Set<Particle>
-        = getParticleSet(key.name, default)
+        = getParticleSet(key.path, default)
 
-    override fun getColor(key: U, default: Color): Color = getColor(key.name, default)
+    override fun getColor(key: U, default: Color): Color = getColor(key.path, default)
 
     override fun getColorList(key: U, default: List<Color>): List<Color>
-        = getColorList(key.name, default)
+        = getColorList(key.path, default)
 
     override fun getColorSet(key: U, default: Set<Color>): Set<Color>
-        = getColorSet(key.name, default)
+        = getColorSet(key.path, default)
 
-    override fun getDyeColor(key: U, default: DyeColor): DyeColor = getDyeColor(key.name, default)
+    override fun getDyeColor(key: U, default: DyeColor): DyeColor = getDyeColor(key.path, default)
 
     override fun getDyeColorList(key: U, default: List<DyeColor>): List<DyeColor>
-        = getDyeColorList(key.name, default)
+        = getDyeColorList(key.path, default)
 
     override fun getDyeColorSet(key: U, default: Set<DyeColor>): Set<DyeColor>
-        = getDyeColorSet(key.name, default)
+        = getDyeColorSet(key.path, default)
 
-    override fun getEnchant(key: U, default: Enchantment): Enchantment = getEnchant(key.name, default)
+    override fun getEnchant(key: U, default: Enchantment): Enchantment = getEnchant(key.path, default)
 
     override fun getEnchantList(key: U, default: List<Enchantment>, filter: Predicate<Enchantment>): List<Enchantment>
-        = getEnchantList(key.name, default, filter)
+        = getEnchantList(key.path, default, filter)
 
     override fun getEnchantSet(key: U, default: Set<Enchantment>, filter: Predicate<Enchantment>): Set<Enchantment>
-        = getEnchantSet(key.name, default, filter)
+        = getEnchantSet(key.path, default, filter)
 
     override fun getItemFlags(key: U, default: Set<ItemFlag>, filter: Predicate<ItemFlag>): Set<ItemFlag>
-        = getItemFlags(key.name, default, filter)
+        = getItemFlags(key.path, default, filter)
 
-    override fun getSound(key: U): Triple<Sound, Float, Float>? = getSound(key.name)
+    override fun getSound(key: U): Triple<Sound, Float, Float>? = getSound(key.path)
 }
