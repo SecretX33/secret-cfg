@@ -21,16 +21,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.github.secretx33.secretcfg.bukkit.enumconfig
+package com.github.secretx33.secretcfg.bukkit
 
+import com.github.secretx33.secretcfg.bukkit.config.Config
+import com.github.secretx33.secretcfg.bukkit.config.ConfigImpl
+import com.github.secretx33.secretcfg.bukkit.enumconfig.EnumConfig
+import com.github.secretx33.secretcfg.bukkit.enumconfig.EnumConfigImpl
 import com.github.secretx33.secretcfg.core.enumconfig.ConfigEnum
 import org.bukkit.plugin.Plugin
 import java.util.logging.Logger
 import kotlin.reflect.KClass
 
-object BukkitEnumConfig {
+object ConfigProvider {
 
-    operator fun <U> invoke(
+    fun create(
+        plugin: Plugin,
+        path: String,
+        logger: Logger = plugin.logger,
+        copyDefault: Boolean = true,
+        filePresentInJar: Boolean = true,
+    ): Config {
+        return ConfigImpl(plugin, path, logger, copyDefault, filePresentInJar)
+    }
+
+    fun <U> createEnumBased(
         plugin: Plugin,
         path: String,
         configClass: KClass<U>,
@@ -38,6 +52,6 @@ object BukkitEnumConfig {
         copyDefault: Boolean = true,
         filePresentInJar: Boolean = true,
     ): EnumConfig<U> where U : ConfigEnum, U : Enum<U> {
-        return EnumConfigImpl(plugin, path, configClass, logger, copyDefault)
+        return EnumConfigImpl(plugin, path, configClass, logger, copyDefault, filePresentInJar)
     }
 }

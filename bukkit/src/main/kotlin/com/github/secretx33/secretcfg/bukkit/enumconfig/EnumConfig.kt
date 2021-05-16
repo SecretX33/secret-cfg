@@ -23,7 +23,6 @@
  */
 package com.github.secretx33.secretcfg.bukkit.enumconfig
 
-import com.github.secretx33.secretcfg.bukkit.config.Config
 import com.github.secretx33.secretcfg.core.enumconfig.BaseEnumConfig
 import com.github.secretx33.secretcfg.core.enumconfig.ConfigEnum
 import com.github.secretx33.secretcfg.core.exception.InvalidDefaultParameterException
@@ -36,7 +35,7 @@ import org.bukkit.potion.PotionEffectType
 import java.util.function.Predicate
 import java.util.function.Supplier
 
-interface EnumConfig<U> : BaseEnumConfig<U>, Config where U : ConfigEnum, U : Enum<U> {
+interface EnumConfig<U> : BaseEnumConfig<U> where U : ConfigEnum, U : Enum<U> {
 
     private inline fun <reified T> U.safeDefault(): T = runCatching { default as T }.getOrElse { throw InvalidDefaultParameterException("Default parameter provided for config key '$name' is not from the expected type '${T::class::simpleName}', but instead its type is '${default::class.simpleName}', please fix your default parameter of this key from your ${configClass.simpleName} class of file '$file'. If you are seeing this error and are not the developer, you should copy this message and send it to they so they can fix the issue.") }
 

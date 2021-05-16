@@ -23,18 +23,77 @@
  */
 package com.github.secretx33.secretcfg.bukkit.config
 
-import org.bukkit.plugin.Plugin
-import java.util.logging.Logger
+import org.bukkit.*
+import org.bukkit.enchantments.Enchantment
+import org.bukkit.entity.EntityType
+import org.bukkit.inventory.ItemFlag
+import org.bukkit.inventory.ItemStack
+import org.bukkit.potion.PotionEffectType
+import java.util.function.Predicate
+import java.util.function.Supplier
 
-object BukkitConfig {
+interface BukkitConfig {
 
-    operator fun invoke (
-        plugin: Plugin,
-        path: String,
-        logger: Logger = plugin.logger,
-        copyDefault: Boolean = true,
-        filePresentInJar: Boolean = true,
-    ): Config {
-        return ConfigImpl(plugin, path, logger, copyDefault, filePresentInJar)
-    }
+    fun serialize(key: String, item: ItemStack)
+
+    fun deserializeItem(key: String): ItemStack?
+
+    fun deserializeItem(key: String, default: Supplier<ItemStack>): ItemStack
+
+    fun serialize(key: String, itemList: List<ItemStack>)
+
+    fun deserializeItemList(key: String, default: Supplier<List<ItemStack>> = Supplier { emptyList() }): List<ItemStack>
+
+    fun getMaterial(key: String, default: Material): Material
+
+    fun getMaterialList(key: String, default: List<Material> = emptyList(), filter: Predicate<Material> = Predicate { true }): List<Material>
+
+    fun getMaterialSet(key: String, default: Set<Material> = emptySet(), filter: Predicate<Material> = Predicate { true }): Set<Material>
+
+    fun getEntityType(key: String, default: EntityType): EntityType
+
+    fun getEntityTypeList(key: String, default: List<EntityType> = emptyList(), filter: Predicate<EntityType> = Predicate { true }): List<EntityType>
+
+    fun getEntityTypeSet(key: String, default: Set<EntityType> = emptySet(), filter: Predicate<EntityType> = Predicate { true }): Set<EntityType>
+
+    fun getPotionEffect(key: String, default: PotionEffectType): PotionEffectType
+
+    fun getPotionEffectList(key: String, default: List<PotionEffectType> = emptyList(), filter: Predicate<PotionEffectType> = Predicate { true }): List<PotionEffectType>
+
+    fun getPotionEffectSet(key: String, default: Set<PotionEffectType> = emptySet(), filter: Predicate<PotionEffectType> = Predicate { true }): Set<PotionEffectType>
+
+    fun getParticle(key: String, default: Particle): Particle
+
+    fun getParticleList(key: String, default: List<Particle> = emptyList()): List<Particle>
+
+    fun getParticleSet(key: String, default: Set<Particle> = emptySet()): Set<Particle>
+
+    fun getColor(key: String, default: Color): Color
+
+    fun getColorList(key: String, default: List<Color> = emptyList()): List<Color>
+
+    fun getColorSet(key: String, default: Set<Color> = emptySet()): Set<Color>
+
+    fun getDyeColor(key: String, default: DyeColor): DyeColor
+
+    fun getDyeColorList(key: String, default: List<DyeColor> = emptyList()): List<DyeColor>
+
+    fun getDyeColorSet(key: String, default: Set<DyeColor> = emptySet()): Set<DyeColor>
+
+    fun getEnchant(key: String, default: Enchantment): Enchantment
+
+    fun getEnchantList(key: String, default: List<Enchantment> = emptyList(), filter: Predicate<Enchantment> = Predicate { true }): List<Enchantment>
+
+    fun getEnchantSet(key: String, default: Set<Enchantment> = emptySet(), filter: Predicate<Enchantment> = Predicate { true }): Set<Enchantment>
+
+    fun getItemFlags(key: String, default: Set<ItemFlag> = emptySet(), filter: Predicate<ItemFlag> = Predicate { true }): Set<ItemFlag>
+
+    /**
+     * Parse and return a sound string Triple containing <Sound, Volume, Pitch>. String should be formatted as "Sound",
+     * "Sound:Volume" or "Sound:Volume:Pitch".
+     *
+     * @param key String Where the sound is located at
+     * @return Triple<Sound, Float, Float>? The parsed sound if entry was found and contained a valid sound name
+     */
+    fun getSound(key: String): Triple<Sound, Float, Float>?
 }

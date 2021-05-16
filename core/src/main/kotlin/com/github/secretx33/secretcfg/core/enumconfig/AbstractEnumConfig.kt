@@ -23,23 +23,16 @@
  */
 package com.github.secretx33.secretcfg.core.enumconfig
 
-import com.github.secretx33.secretcfg.core.config.AbstractConfig
+import com.github.secretx33.secretcfg.core.config.BaseConfig
 import com.github.secretx33.secretcfg.core.exception.InvalidDefaultParameterException
-import java.io.File
 import java.util.function.Predicate
-import java.util.logging.Logger
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
 abstract class AbstractEnumConfig<U> (
-    plugin: Any,
-    dataFolder: File,
     override val configClass: KClass<U>,
-    path: String,
-    logger: Logger,
-    copyDefault: Boolean,
-    filePresentInJar: Boolean,
-) : AbstractConfig(plugin, dataFolder, path, logger, copyDefault, filePresentInJar), BaseEnumConfig<U> where U : ConfigEnum, U : Enum<U>  {
+    private val baseConfig: BaseConfig,
+) : BaseConfig by baseConfig, BaseEnumConfig<U> where U : ConfigEnum, U : Enum<U>  {
 
     override fun has(key: U): Boolean = has(key.path)
 
@@ -96,11 +89,11 @@ abstract class AbstractEnumConfig<U> (
     private fun <T : Any> U.safeDefaultGeneric(clazz: KClass<T>): T = runCatching { clazz.cast(default) }.getOrElse { wrongDefault(this)}
 
     private fun wrongDefault(key: U): Nothing {
-        throw InvalidDefaultParameterException(WRONG_DEFAULT_PARAMETER_TYPE.format(key.path, key.default::class.simpleName, configClass::class.simpleName, manager.fileName))
+        throw InvalidDefaultParameterException(WRONG_DEFAULT_PARAMETER_TYPE.format(key.path, key.default::class.simpleName, configClass::class.simpleName, file))
     }
 
     private fun wrongDefault(key: U, expectedType: KClass<*>): Nothing {
-        throw InvalidDefaultParameterException(WRONG_DEFAULT_PARAMETER_TYPE_KNOWN_TYPE.format(key.path, expectedType::class.simpleName, key.default::class.simpleName, configClass::class.simpleName, manager.fileName))
+        throw InvalidDefaultParameterException(WRONG_DEFAULT_PARAMETER_TYPE_KNOWN_TYPE.format(key.path, expectedType::class.simpleName, key.default::class.simpleName, configClass::class.simpleName, file))
     }
 
     private companion object {

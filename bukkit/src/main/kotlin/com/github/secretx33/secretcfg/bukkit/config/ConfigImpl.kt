@@ -44,11 +44,11 @@ import java.util.logging.Logger
 
 class ConfigImpl (
     plugin: Plugin,
-    key: String,
+    path: String,
     logger: Logger = plugin.logger,
     copyDefault: Boolean = true,
     filePresentInJar: Boolean = true,
-) : AbstractConfig(plugin, plugin.dataFolder, key, logger, copyDefault, filePresentInJar), Config {
+) : AbstractConfig(plugin, plugin.dataFolder, path, logger, copyDefault, filePresentInJar), Config {
 
     private val colorParser = ColorParser(manager.fileName, logger)
 
