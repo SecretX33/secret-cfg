@@ -25,6 +25,7 @@ package com.github.secretx33.secretcfg.bukkit
 
 import com.github.secretx33.secretcfg.bukkit.config.Config
 import com.github.secretx33.secretcfg.bukkit.config.ConfigImpl
+import com.github.secretx33.secretcfg.bukkit.enumconfig.BukkitEnumConfig
 import com.github.secretx33.secretcfg.bukkit.enumconfig.EnumConfig
 import com.github.secretx33.secretcfg.bukkit.enumconfig.EnumConfigImpl
 import com.github.secretx33.secretcfg.core.enumconfig.ConfigEnum
