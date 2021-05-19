@@ -21,9 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.github.secretx33.secretcfg.bukkit.extensions
+package com.github.secretx33.secretcfg.bukkit.config
 
-import org.bukkit.inventory.ItemStack
+import com.github.secretx33.secretcfg.core.config.BaseConfig
 
-internal val ItemStack.isAir
-    get() = type.isItem
+interface Config : BaseConfig, BukkitConfig

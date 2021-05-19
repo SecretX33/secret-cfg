@@ -1,3 +1,26 @@
+/**
+ * MIT License
+ *
+ * Copyright (c) 2021 SecretX33
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package com.github.secretx33.secretcfg.core.config
 
 import java.util.function.Predicate
@@ -7,7 +30,28 @@ import kotlin.reflect.KClass
  * Base interface to expose cached methods to the consumers
  * @since 1.0
  */
-interface BaseCachedConfig {
+interface BaseConfig {
+
+    /**
+     * Name of the file, with extension.
+     *
+     * @since 1.0
+     */
+    val file: String
+
+    /**
+     * Name of the file, without extension.
+     *
+     * @since 1.0
+     */
+    val fileWithoutExtension: String
+
+    /**
+     * Relative path from the jar perspective.
+     *
+     * @since 1.0
+     */
+    val path: String
 
     /**
      * Reload the configs, forcing the values to be cached again
@@ -42,11 +86,61 @@ interface BaseCachedConfig {
     fun set(key: String, value: Any)
 
     /**
+     * Sets a Boolean in a key on the file, does not persist the changes, user must manually call [save] afterwards
+     *
+     * @param key String The key where the [value] should be saved at
+     * @param value Boolean The boolean to be saved on the [key]
+     * @since 1.0
+     */
+    fun setBoolean(key: String, value: Boolean)
+
+    /**
+     * Sets an Int in a key on the file, does not persist the changes, user must manually call [save] afterwards
+     *
+     * @param key String The key where the [value] should be saved at
+     * @param value Int The int to be saved on the [key]
+     * @since 1.0
+     */
+    fun setInt(key: String, value: Int)
+
+    /**
+     * Sets a value in a key on the file, does not persist the changes, user must manually call [save] afterwards
+     *
+     * @param key String The key where the [value] should be saved at
+     * @param value Double The double to be saved on the [key]
+     * @since 1.0
+     */
+    fun setDouble(key: String, value: Double)
+
+    /**
+     * Sets a String in a key on the file, does not persist the changes, user must manually call [save] afterwards
+     *
+     * @param key String The key where the [value] should be saved at
+     * @param value String The string to be saved on the [key]
+     * @since 1.0
+     */
+    fun setString(key: String, value: String)
+
+    /**
      * Save the currently edited configurations to the file, this operation should not erase any comments of the file.
      *
      * @since 1.0
      */
     fun save()
+
+    /**
+     * Get the keys directly under root.
+     *
+     * @since 1.0
+     */
+    fun getKeys(): Set<String>
+
+    /**
+     * Get the keys directly under path.
+     *
+     * @since 1.0
+     */
+    fun getKeys(path: String): Set<String>
 
     /**
      * Retrieves a generic value from the config file, or default value if the key is missing
@@ -59,9 +153,19 @@ interface BaseCachedConfig {
     fun <T : Any> get(key: String, default: T): T
 
     /**
-     * Retrieves a Int value from the config file, or the default value if the key is missing.
+     * Retrieves a Boolean value from the config file, or the default value if the key is missing.
      *
-     * @param key [String] Where the Float is at
+     * @param key [String] Where the Boolean is at
+     * @param default [Boolean] A default value in case the specified [key] is missing
+     * @return [Boolean] The retrieved Boolean, or [default] in case the key was missing
+     * @since 1.0
+     */
+    fun getBoolean(key: String, default: Boolean): Boolean
+
+    /**
+     * Retrieves an Int value from the config file, or the default value if the key is missing.
+     *
+     * @param key [String] Where the Int is at
      * @param default [Int] A default value in case the specified [key] is missing
      * @param minValue [Int] Minimum value that can be returned by this function
      * @param maxValue [Int] Maximum value that can be returned by this function
@@ -176,7 +280,7 @@ interface BaseCachedConfig {
 
     /**
      * Get all integers within the range given by the user, e.g., "0 - 8" would produce a set equivalent to `setOf(0..8)`,
-     * sorted by their natural order.
+     * unsorted.
      *
      * @param key String Where the range is stored at
      * @param default Set<Int> A fallback value in case the range in the path specified is missing or incorrect

@@ -1,3 +1,26 @@
+/**
+ * MIT License
+ *
+ * Copyright (c) 2021 SecretX33
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package com.github.secretx33.secretcfg.core.manager
 
 import kotlinx.coroutines.CoroutineScope
@@ -32,7 +55,8 @@ class YamlManager (
     private val dataFolder: File,
     path: String,
     private val logger: Logger,
-    copyDefault: Boolean,
+    private val copyDefault: Boolean,
+    private val filePresentInJar: Boolean,
 ) {
 
     val fileName: String = path.replace('\\', '/').split('/').last().appendIfMissing(".yml")
@@ -51,7 +75,7 @@ class YamlManager (
             file.createIfMissing()
             root = loader.load()
         } catch (e: Exception) {
-            logger.log(Level.SEVERE, "Error while reloading file $fileName", e)
+            logger.log(Level.SEVERE, "Error while reloading file '$fileName'", e)
         }
     }
 
@@ -60,9 +84,12 @@ class YamlManager (
 
         createParentDirs()
         createNewFile()
+        if(!copyDefault) return
+
         val internalFile: InputStream = plugin.javaClass.classLoader.getResourceAsStream(relativePath)
             ?: plugin.javaClass.classLoader.getResourceAsStream(fileName)
-            ?: throw IllegalArgumentException("resource $fileName was not found")
+            ?: if(filePresentInJar) throw IllegalArgumentException("resource '$fileName' was not found")
+            else return
 
         writeBytes(internalFile.readBytes())
     }
@@ -115,24 +142,30 @@ class YamlManager (
         setStringList(key, value.toList())
     }
 
+    fun getKeys(): Set<String> = root.childrenMap().keys.mapNotNull { it.toString() }.toHashSet()
+
+    fun getKeys(path: String): Set<String> = root.parseNode(path).childrenMap().keys.mapNotNull { it.toString() }.toHashSet()
+
     fun contains(key: String): Boolean = get(key) != null
 
     private fun CommentedConfigurationNode.parseNode(path: String) = node(path.split('.'))
 
-    fun save() = CoroutineScope(Dispatchers.IO).launch {
-        lock.withLock {
-            try {
-                file.createIfMissing()
-                val oldFile = file.getLines()
-                val comments = parseFileComments(oldFile)
-                // commit all changes made to the file, erasing the comments in the process
-                loader.save(root)
-                // re-add comments to the file
-                val newFile = addCommentsToFile(comments)
-                // and write the file on the disk
-                file.writeLines(newFile)
-            } catch (e: Exception) {
-                logger.log(Level.WARNING, "Error while saving file $fileName", e)
+    fun save() {
+        CoroutineScope(Dispatchers.IO).launch {
+            lock.withLock {
+                try {
+                    file.createIfMissing()
+                    val oldFile = file.getLines()
+                    val comments = parseFileComments(oldFile)
+                    // commit all changes made to the file, erasing the comments in the process
+                    loader.save(root)
+                    // re-add comments to the file
+                    val newFile = addCommentsToFile(comments)
+                    // and write the file on the disk
+                    file.writeLines(newFile)
+                } catch (e: Exception) {
+                    logger.log(Level.WARNING, "Error while saving file $fileName", e)
+                }
             }
         }
     }

@@ -1,19 +1,42 @@
-package com.github.secretx33.secretcfg.bukkit
+/**
+ * MIT License
+ *
+ * Copyright (c) 2021 SecretX33
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+package com.github.secretx33.secretcfg.bukkit.config
 
 import com.cryptomorin.xseries.XEnchantment
-import com.cryptomorin.xseries.XEntity
 import com.cryptomorin.xseries.XMaterial
 import com.cryptomorin.xseries.XPotion
+import com.cryptomorin.xseries.XSound
 import com.github.secretx33.secretcfg.bukkit.extensions.isAir
-import com.github.secretx33.secretcfg.bukkit.serializer.ColorParser
-import com.github.secretx33.secretcfg.bukkit.serializer.ItemSerializer
-import com.github.secretx33.secretcfg.core.config.AbstractCachedConfig
-import org.bukkit.Color
-import org.bukkit.DyeColor
-import org.bukkit.Material
-import org.bukkit.Particle
+import com.github.secretx33.secretcfg.bukkit.parser.ColorParser
+import com.github.secretx33.secretcfg.bukkit.parser.ItemSerializer
+import com.github.secretx33.secretcfg.bukkit.parser.PatternParser
+import com.github.secretx33.secretcfg.core.config.AbstractConfig
+import org.bukkit.*
+import org.bukkit.block.banner.Pattern
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.EntityType
+import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
 import org.bukkit.potion.PotionEffectType
@@ -21,12 +44,13 @@ import java.util.function.Predicate
 import java.util.function.Supplier
 import java.util.logging.Logger
 
-class CachedConfigImpl (
+class ConfigImpl (
     plugin: Plugin,
-    key: String,
+    path: String,
     logger: Logger = plugin.logger,
     copyDefault: Boolean = true,
-) : AbstractCachedConfig(plugin, plugin.dataFolder, key, logger, copyDefault), CachedConfig {
+    filePresentInJar: Boolean = true,
+) : AbstractConfig(plugin, plugin.dataFolder, path, logger, copyDefault, filePresentInJar), Config {
 
     private val colorParser = ColorParser(manager.fileName, logger)
 
@@ -50,9 +74,9 @@ class CachedConfigImpl (
             .let { set(key, it) }
     }
 
-    override fun deserializeItemList(key: String, default: List<ItemStack>): List<ItemStack> {
-        return cachedList(key, default) {
-            manager.getStringList(key).mapNotNull { ItemSerializer.fromStringOrNull(it) }
+    override fun deserializeItemList(key: String, default: Supplier<List<ItemStack>>): List<ItemStack> {
+        return cachedList(key, default) { list ->
+            list.mapNotNull { ItemSerializer.fromStringOrNull(it) }
         }
     }
 
@@ -65,7 +89,7 @@ class CachedConfigImpl (
         return filteredCachedList(key, default, filter) { list ->
             list.mapNotNull { entry ->
                 XMaterial.matchXMaterial(entry).map { it.parseMaterial() }?.orElse(null) ?: run {
-                    warnInvalidEnumEntry(key, entry)
+                    warnInvalidEntry(key, entry)
                     null
                 }
             }
@@ -76,7 +100,7 @@ class CachedConfigImpl (
         return filteredCachedSet(key, default, filter) { list ->
             list.mapNotNull { entry ->
                 XMaterial.matchXMaterial(entry).map { it.parseMaterial() }?.orElse(null) ?: run {
-                    warnInvalidEnumEntry(key, entry)
+                    warnInvalidEntry(key, entry)
                     null
                 }
             }
@@ -104,7 +128,7 @@ class CachedConfigImpl (
         return filteredCachedList(key, default, filter) { list ->
             list.mapNotNull { type ->
                 XPotion.parsePotionEffectFromString(type)?.type ?: run {
-                    warnInvalidEnumEntry(key, type)
+                    warnInvalidEntry(key, type)
                     null
                 }
             }
@@ -115,7 +139,7 @@ class CachedConfigImpl (
         return filteredCachedSet(key, default, filter) { set ->
             set.mapNotNull { type ->
                 XPotion.parsePotionEffectFromString(type)?.type ?: run {
-                    warnInvalidEnumEntry(key, type)
+                    warnInvalidEntry(key, type)
                     null
                 }
             }
@@ -170,7 +194,7 @@ class CachedConfigImpl (
         return filteredCachedList(key, default, filter) { list ->
             list.mapNotNull { enchant ->
                 XEnchantment.matchXEnchantment(enchant).map { it.parseEnchantment() }?.orElse(null) ?: run {
-                    warnInvalidEnumEntry(key, enchant)
+                    warnInvalidEntry(key, enchant)
                     null
                 }
             }
@@ -181,10 +205,59 @@ class CachedConfigImpl (
         return filteredCachedSet(key, default, filter) { set ->
             set.mapNotNull { enchant ->
                 XEnchantment.matchXEnchantment(enchant).map { it.parseEnchantment() }?.orElse(null) ?: run {
-                    warnInvalidEnumEntry(key, enchant)
+                    warnInvalidEntry(key, enchant)
                     null
                 }
             }
         }
     }
+
+    override fun getItemFlags(key: String, default: Set<ItemFlag>, filter: Predicate<ItemFlag>): Set<ItemFlag>
+        = getEnumSet(key, default, ItemFlag::class, filter)
+
+    @Suppress("UNCHECKED_CAST")
+    override fun getSound(key: String): Triple<Sound, Float, Float>? {
+        cache[key]?.let { runCatching { it as Triple<Sound, Float, Float> }.getOrNull()?.let { return it } }
+
+        val sounds = manager.getString(key, "").split(':', limit = 3).map { it.trim() }
+        // no sound
+        if(sounds.isEmpty() || sounds[0].isBlank()) return null
+
+        // for "SOUND"
+        val sound = XSound.matchXSound(sounds[0]).map { it.parseSound() }?.orElse(null) ?: run {
+            warnInvalidEntry(key, sounds[0])
+            return null
+        }
+        if(sounds.size == 1) return Triple(sound, 1f, 1f).also { cache[key] = it }
+
+        // for "SOUND:1.0" as in "SOUND:VOLUME"
+        val volume = sounds[1].toDoubleOrNull()?.coerceAtLeast(0.0) ?: run {
+            logger.warning("Could not parse volume '${sounds[1]}' of sound '${sound.name}' of key '$key' in file '${file}', please fix your configurations and reload.")
+            return Triple(sound, 1f, 1f).also { cache[key] = it }
+        }
+        if(sounds.size == 2) return Triple(sound, volume.toFloat(), 1f).also { cache[key] = it }
+
+        // for "SOUND:1.0:1.0" as in "SOUND:VOLUME:PITCH"
+        val pitch = sounds[2].toDoubleOrNull()?.coerceAtLeast(0.01) ?: run {
+            logger.warning("Could not parse pitch '${sounds[2]}' of sound '${sound.name}' of key '$key' in file '${file}', please fix your configurations and reload.")
+            return Triple(sound, volume.toFloat(), 1f).also { cache[key] = it }
+        }
+        return Triple(sound, volume.toFloat(), pitch.toFloat()).also { cache[key] = it }
+    }
+
+    override fun getSound(key: String, default: Triple<Sound, Float, Float>): Triple<Sound, Float, Float>
+        = getSound(key) ?: default
+
+    override fun getPattern(key: String): Pattern? = manager.getString(key)?.let { parsePattern(it, key) }
+
+    override fun getPattern(key: String, supplier: Supplier<Pattern>): Pattern
+        = cachedStringBased(key, supplier) { parsePattern(it, key) }
+
+    override fun getPatternList(key: String, default: List<Pattern>): List<Pattern>
+        = cachedList(key, default) { list -> list.mapNotNull { line -> parsePattern(line, key) } }
+
+    private fun parsePattern(line: String, key: String)
+        = PatternParser.parsePattern(line,
+            invalidPatternLogger = { "[$file] Invalid pattern '$it' for key '$key', please fix your configurations and reload." },
+            invalidDyeColorLogger = { pattern, dyeColor -> "[$file] Invalid dye color '$dyeColor' in pattern '$pattern' for key '$key', please fix your configurations and reload." })
 }

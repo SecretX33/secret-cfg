@@ -21,9 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.github.secretx33.secretcfg.bukkit.extensions
+package com.github.secretx33.secretcfg.core.enumconfig
 
-import org.bukkit.inventory.ItemStack
+interface ConfigEnum {
+    /**
+     * Represents the path of the config
+     */
+    val path: String
 
-internal val ItemStack.isAir
-    get() = type.isItem
+    /**
+     * Represent an alternative value in case the key path is non existent
+     * or contains an invalid value/type
+     */
+    val default: Any
+}

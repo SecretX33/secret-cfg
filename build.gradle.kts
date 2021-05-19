@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("jvm") version "1.5.0"
     id("maven-publish")
+    id("com.github.hierynomus.license") version "0.16.1"
 }
 
 allprojects {
@@ -24,14 +25,15 @@ allprojects {
 subprojects {
     apply(plugin = "kotlin")
     apply(plugin = "maven-publish")
+    apply(plugin = "license")
 
     dependencies {
         testImplementation(kotlin("test-junit5"))
         testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
         testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.6.0")
-        implementation("org.spongepowered:configurate-core:4.0.0")
-        implementation("org.spongepowered:configurate-yaml:4.0.0")
-        implementation("org.spongepowered:configurate-extra-kotlin:4.0.0")
+        implementation("org.spongepowered:configurate-core:4.1.1")
+        implementation("org.spongepowered:configurate-yaml:4.1.1")
+        implementation("org.spongepowered:configurate-extra-kotlin:4.1.1")
     }
 
     tasks.test {
@@ -70,5 +72,10 @@ subprojects {
                 }
             }
         }
+    }
+
+    license {
+        header = rootProject.file("LICENSE")
+        strictCheck = true
     }
 }

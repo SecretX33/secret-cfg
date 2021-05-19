@@ -21,9 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.github.secretx33.secretcfg.bukkit.extensions
+package com.github.secretx33.secretcfg.bukkit.enumconfig
 
-import org.bukkit.inventory.ItemStack
+import com.github.secretx33.secretcfg.bukkit.config.Config
+import com.github.secretx33.secretcfg.core.enumconfig.BaseEnumConfig
+import com.github.secretx33.secretcfg.core.enumconfig.ConfigEnum
 
-internal val ItemStack.isAir
-    get() = type.isItem
+interface EnumConfig<U> : BukkitEnumConfig<U>, BaseEnumConfig<U>, Config where U : ConfigEnum, U : Enum<U>
