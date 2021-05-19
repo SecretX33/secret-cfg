@@ -194,6 +194,19 @@ open class AbstractConfig (
     }
 
     @Suppress("UNCHECKED_CAST")
+    protected fun <T: Any> cachedStringBased(key: String, default: Supplier<T>, transformer: (String) -> T?): T {
+        return cache.getOrPut(key) {
+            manager.getString(key)?.let {
+                transformer(it) ?: run {
+                    val def = default.get()
+                    warnInvalidEntry(key, it, def)
+                    def
+                }
+            }
+        }.let { runCatching { it as T }.getOrElse { cacheException(key, it, default) } }
+    }
+
+    @Suppress("UNCHECKED_CAST")
     protected fun <T: Any> cachedAny(key: String, default: T, supplier: () -> T?): T {
         return cache.getOrPut(key) {
             supplier() ?: run {

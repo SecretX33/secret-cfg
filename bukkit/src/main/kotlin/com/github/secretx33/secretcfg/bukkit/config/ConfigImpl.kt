@@ -28,10 +28,12 @@ import com.cryptomorin.xseries.XMaterial
 import com.cryptomorin.xseries.XPotion
 import com.cryptomorin.xseries.XSound
 import com.github.secretx33.secretcfg.bukkit.extensions.isAir
-import com.github.secretx33.secretcfg.bukkit.serializer.ColorParser
-import com.github.secretx33.secretcfg.bukkit.serializer.ItemSerializer
+import com.github.secretx33.secretcfg.bukkit.parser.ColorParser
+import com.github.secretx33.secretcfg.bukkit.parser.ItemSerializer
+import com.github.secretx33.secretcfg.bukkit.parser.PatternParser
 import com.github.secretx33.secretcfg.core.config.AbstractConfig
 import org.bukkit.*
+import org.bukkit.block.banner.Pattern
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.EntityType
 import org.bukkit.inventory.ItemFlag
@@ -217,7 +219,7 @@ class ConfigImpl (
     override fun getSound(key: String): Triple<Sound, Float, Float>? {
         cache[key]?.let { runCatching { it as Triple<Sound, Float, Float> }.getOrNull()?.let { return it } }
 
-        val sounds = manager.getString(key, "").split(':', limit = 3).map { it.replace(" ", "") }
+        val sounds = manager.getString(key, "").split(':', limit = 3).map { it.trim() }
         // no sound
         if(sounds.isEmpty() || sounds[0].isBlank()) return null
 
@@ -242,4 +244,20 @@ class ConfigImpl (
         }
         return Triple(sound, volume.toFloat(), pitch.toFloat()).also { cache[key] = it }
     }
+
+    override fun getSound(key: String, default: Triple<Sound, Float, Float>): Triple<Sound, Float, Float>
+        = getSound(key) ?: default
+
+    override fun getPattern(key: String): Pattern? = manager.getString(key)?.let { parsePattern(it, key) }
+
+    override fun getPattern(key: String, supplier: Supplier<Pattern>): Pattern
+        = cachedStringBased(key, supplier) { parsePattern(it, key) }
+
+    override fun getPatternList(key: String, default: List<Pattern>): List<Pattern>
+        = cachedList(key, default) { list -> list.mapNotNull { line -> parsePattern(line, key) } }
+
+    private fun parsePattern(line: String, key: String)
+        = PatternParser.parsePattern(line,
+            invalidPatternLogger = { "[$file] Invalid pattern '$it' for key '$key', please fix your configurations and reload." },
+            invalidDyeColorLogger = { pattern, dyeColor -> "[$file] Invalid dye color '$dyeColor' in pattern '$pattern' for key '$key', please fix your configurations and reload." })
 }

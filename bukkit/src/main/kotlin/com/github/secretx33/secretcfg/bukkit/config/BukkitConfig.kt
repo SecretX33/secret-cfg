@@ -24,6 +24,7 @@
 package com.github.secretx33.secretcfg.bukkit.config
 
 import org.bukkit.*
+import org.bukkit.block.banner.Pattern
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.EntityType
 import org.bukkit.inventory.ItemFlag
@@ -93,7 +94,23 @@ interface BukkitConfig {
      * "Sound:Volume" or "Sound:Volume:Pitch".
      *
      * @param key String Where the sound is located at
-     * @return Triple<Sound, Float, Float>? The parsed sound if entry was found and contained a valid sound name
+     * @return Triple<Sound, Float, Float>? The parsed sound if entry was found and contained a valid sound name, or null if the entry was missing or the sound part was invalid
      */
     fun getSound(key: String): Triple<Sound, Float, Float>?
+
+    /**
+     * Parse and return a sound string Triple containing <Sound, Volume, Pitch>. String should be formatted as "Sound",
+     * "Sound:Volume" or "Sound:Volume:Pitch".
+     *
+     * @param key String Where the sound is located at
+     * @param default Triple<Sound, Float, Float> A default value in case the default entry is invalid or missing
+     * @return Triple<Sound, Float, Float> The parsed sound if entry was found and contained a valid sound name, or the default value otherwise
+     */
+    fun getSound(key: String, default: Triple<Sound, Float, Float>): Triple<Sound, Float, Float>
+
+    fun getPattern(key: String): Pattern?
+
+    fun getPattern(key: String, supplier: Supplier<Pattern>): Pattern
+
+    fun getPatternList(key: String, default: List<Pattern> = emptyList()): List<Pattern>
 }

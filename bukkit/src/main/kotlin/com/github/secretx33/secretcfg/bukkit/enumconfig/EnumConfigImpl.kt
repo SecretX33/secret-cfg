@@ -29,6 +29,7 @@ import com.github.secretx33.secretcfg.bukkit.config.ConfigImpl
 import com.github.secretx33.secretcfg.core.enumconfig.AbstractEnumConfig
 import com.github.secretx33.secretcfg.core.enumconfig.ConfigEnum
 import org.bukkit.*
+import org.bukkit.block.banner.Pattern
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.EntityType
 import org.bukkit.inventory.ItemFlag
@@ -125,4 +126,11 @@ class EnumConfigImpl<U> (
         = getItemFlags(key.path, default, filter)
 
     override fun getSound(key: U): Triple<Sound, Float, Float>? = getSound(key.path)
+
+    override fun getSound(key: U, default: Triple<Sound, Float, Float>): Triple<Sound, Float, Float>
+        = getSound(key) ?: default
+
+    override fun getPattern(key: U, default: Supplier<Pattern>): Pattern = getPattern(key.path, default)
+
+    override fun getPatternList(key: U, default: List<Pattern>): List<Pattern> = getPatternList(key.path, default)
 }

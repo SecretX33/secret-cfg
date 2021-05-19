@@ -21,13 +21,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.github.secretx33.secretcfg.bukkit.serializer
+package com.github.secretx33.secretcfg.bukkit.parser
 
 import com.github.secretx33.secretcfg.core.utils.fields
 import org.bukkit.Color
 import java.util.logging.Logger
 
-class ColorParser(private val fileName: String, private val logger: Logger) {
+class ColorParser(private val fileName: String, private val logger: Logger?) {
 
     fun parse(key: String, color: String, skipBlankString: Boolean = false): Color? {
         if(skipBlankString && color.isBlank()) return null
@@ -38,7 +38,7 @@ class ColorParser(private val fileName: String, private val logger: Logger) {
         }
         // if color is a named color
         return Color::class.fields().entries.firstOrNull { it.key.equals(color, ignoreCase = true) }?.value ?: run {
-            logger.warning(MALFORMED_COLOR_STRING.format(fileName, key, color))
+            logger?.warning(MALFORMED_COLOR_STRING.format(fileName, key, color))
             null
         }
     }
@@ -50,7 +50,7 @@ class ColorParser(private val fileName: String, private val logger: Logger) {
         return try {
             Color.fromRGB(r, g, b)
         } catch(e: IllegalArgumentException) {
-            logger.warning(MALFORMED_RGB_COLOR.format(fileName, key, this))
+            logger?.warning(MALFORMED_RGB_COLOR.format(fileName, key, this))
             null
         }
     }

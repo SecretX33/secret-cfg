@@ -26,6 +26,7 @@ package com.github.secretx33.secretcfg.bukkit.enumconfig
 import com.github.secretx33.secretcfg.core.enumconfig.ConfigEnum
 import com.github.secretx33.secretcfg.core.exception.InvalidDefaultParameterException
 import org.bukkit.*
+import org.bukkit.block.banner.Pattern
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.EntityType
 import org.bukkit.inventory.ItemFlag
@@ -105,4 +106,18 @@ interface BukkitEnumConfig<U> where U : ConfigEnum, U : Enum<U> {
      * @return Triple<Sound, Float, Float>? The parsed sound if entry was found and contained a valid sound name
      */
     fun getSound(key: U): Triple<Sound, Float, Float>?
+
+    /**
+     * Parse and return a sound string Triple containing <Sound, Volume, Pitch>. String should be formatted as "Sound",
+     * "Sound:Volume" or "Sound:Volume:Pitch".
+     *
+     * @param key U Where the sound is located at
+     * @param default Triple<Sound, Float, Float>The parsed sound if entry was found and contained a valid sound name
+     * @return Triple<Sound, Float, Float>? The parsed sound if entry was found and contained a valid sound name, or the default value otherwise
+     */
+    fun getSound(key: U, default: Triple<Sound, Float, Float> = key.safeDefault()): Triple<Sound, Float, Float>
+
+    fun getPattern(key: U, default: Supplier<Pattern> = key.safeDefault()): Pattern
+
+    fun getPatternList(key: U, default: List<Pattern> = key.safeDefault()): List<Pattern>
 }
