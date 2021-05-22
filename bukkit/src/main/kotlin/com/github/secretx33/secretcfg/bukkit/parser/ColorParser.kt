@@ -27,7 +27,7 @@ import com.github.secretx33.secretcfg.core.utils.fields
 import org.bukkit.Color
 import java.util.logging.Logger
 
-class ColorParser(private val fileName: String, private val logger: Logger? = null) {
+class ColorParser(private val fileName: String, private val logger: Logger?) {
 
     fun parse(key: String, color: String, skipBlankString: Boolean = false): Color? {
         if(skipBlankString && color.isBlank()) return null

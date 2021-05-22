@@ -153,14 +153,6 @@ interface BaseConfig {
     fun <T : Any> get(key: String, default: T): T
 
     /**
-     * Retrieves a Boolean from the config file, or null if the key is missing.
-     *
-     * @param key String
-     * @return Boolean? A Boolean if key is present, null otherwise
-     */
-    fun getBoolean(key: String): Boolean?
-
-    /**
      * Retrieves a Boolean value from the config file, or the default value if the key is missing.
      *
      * @param key [String] Where the Boolean is at
@@ -169,14 +161,6 @@ interface BaseConfig {
      * @since 1.0
      */
     fun getBoolean(key: String, default: Boolean): Boolean
-
-    /**
-     * Retrieves an Int from the config file, or null if the key is missing.
-     *
-     * @param key String
-     * @return Int? An Int if key is present, null otherwise
-     */
-    fun getInt(key: String): Int?
 
     /**
      * Retrieves an Int value from the config file, or the default value if the key is missing.
@@ -191,14 +175,6 @@ interface BaseConfig {
     fun getInt(key: String, default: Int = 0, minValue: Int = 0, maxValue: Int = Int.MAX_VALUE): Int
 
     /**
-     * Retrieves a Float from the config file, or null if the key is missing.
-     *
-     * @param key String
-     * @return Float? A Float if key is present, null otherwise
-     */
-    fun getFloat(key: String): Float?
-
-    /**
     * Retrieves a Float value from the config file, or the default value if the key is missing.
     *
     * @param key [String] Where the Float is at
@@ -211,14 +187,6 @@ interface BaseConfig {
     fun getFloat(key: String, default: Float = 0f, minValue: Float = 0f, maxValue: Float = Float.MAX_VALUE): Float
 
     /**
-     * Retrieves a Double from the config file, or null if the key is missing.
-     *
-     * @param key String
-     * @return Double? A Double if key is present, null otherwise
-     */
-    fun getDouble(key: String): Double?
-
-    /**
      * Retrieves a Double value from the config file, or the default value if the key is missing.
      *
      * @param key [String] Where the Double is at
@@ -229,14 +197,6 @@ interface BaseConfig {
      * @since 1.0
      */
     fun getDouble(key: String, default: Double = 0.0, minValue: Double = 0.0, maxValue: Double = Double.MAX_VALUE): Double
-
-    /**
-     * Retrieves a String from the config file, or null if the key is missing.
-     *
-     * @param key String
-     * @return String? A String if key is present, null otherwise
-     */
-    fun getString(key: String): String?
 
     /**
      * Retrieves a String from the config file, or the default value if the key is missing.
@@ -264,7 +224,7 @@ interface BaseConfig {
      * @param key [String] Where the enum is stored at
      * @param default [T] A default value in case the entry is missing or invalid
      * @param filter [Predicate<T>] A predicate to filter the item retrieved from the config
-     * @return [T] The enum retrieved from the config, in case it was present and was accepted by the [filter], or the [default] value otherwise
+     * @return [T] The enum retrieved from the config, in case it was present and was accepted by the [filter], or the [default] value
      * @since 1.0
      */
     fun <T : Enum<T>> getEnum(key: String, default: T, filter: Predicate<T> = Predicate { true }): T
