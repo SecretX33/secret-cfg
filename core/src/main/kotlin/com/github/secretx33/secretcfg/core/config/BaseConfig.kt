@@ -179,6 +179,7 @@ interface BaseConfig {
     fun getInt(key: String): Int?
 
     /**
+
      * Retrieves an Int value from the config file, or the default value if the key is missing.
      *
      * @param key [String] Where the Int is at
