@@ -108,23 +108,30 @@ open class AbstractConfig (
         }.let { runCatching { it as T }.getOrElse { cacheException(key, it, default) } }
     }
 
+    override fun getBoolean(key: String): Boolean? = manager.getBoolean(key)
+
     override fun getBoolean(key: String, default: Boolean): Boolean {
         return cache.getOrPut(key) {
-            runCatching { manager.getBoolean(key) as Boolean }.getOrNull() ?: run {
-                warnWrongType(key, manager.get(key), default)
-                default
-            }
+            manager.getBoolean(key, default)
         }.let { runCatching { it as Boolean }.getOrElse { cacheException(key, it, default) } }
     }
+
+    override fun getInt(key: String): Int? = manager.getInt(key)
 
     override fun getInt(key: String, default: Int, minValue: Int, maxValue: Int): Int
         = cachedAny(key, default) { (manager.get(key) as? Int)?.let { int -> max(minValue, min(maxValue, int)) } }
 
+    override fun getFloat(key: String): Float? = manager.getFloat(key)
+
     override fun getFloat(key: String, default: Float, minValue: Float, maxValue: Float): Float
         = cachedAny(key, default) { (manager.get(key, default) as? Float)?.let { float -> max(minValue, min(maxValue, float)) } }
 
+    override fun getDouble(key: String): Double? = manager.getDouble(key)
+
     override fun getDouble(key: String, default: Double, minValue: Double, maxValue: Double): Double
         = cachedAny(key, default) { (manager.get(key, default) as? Double)?.let { double -> max(minValue, min(maxValue, double)) } }
+
+    override fun getString(key: String): String? = manager.getString(key)
 
     override fun getString(key: String, default: String): String
         = cache.getOrPut(key) { manager.getString(key, default) }
