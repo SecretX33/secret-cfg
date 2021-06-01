@@ -25,4 +25,9 @@ package com.github.secretx33.secretcfg.bukkit.config
 
 import com.github.secretx33.secretcfg.core.config.BaseConfig
 
+/**
+ * Wires the basic config with the bukkit config, providing a way to easily expose both interfaces to the consumer.
+ *
+ * @since 1.0
+ */
 interface Config : BaseConfig, BukkitConfig

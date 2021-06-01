@@ -34,7 +34,7 @@ import kotlin.reflect.KClass
  *
  * @since 1.0
  */
-fun <T : Enum<T>> KClass<out T>.values() = java.enumConstants
+fun <T : Enum<T>> KClass<out T>.values(): Array<out T> = java.enumConstants
 
 internal fun Path.nameEndsWithAny(vararg others: String): Boolean = others.isEmpty() || others.any { name.endsWith(it, ignoreCase = true) }
 

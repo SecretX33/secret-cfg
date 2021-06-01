@@ -23,12 +23,24 @@
  */
 package com.github.secretx33.secretcfg.core.config
 
+/**
+ * Holds most config options that can be altered to better adapt to situations.
+ *
+ * @property copyDefault Boolean If file should be copied from jar when reloading and at start, in case it don't exists
+ * @property expectFileInJar Boolean If file is expected to be present in the jar, false will prevent the [IllegalStateException] for missing file and safely ignore the missing file
+ * @since 1.0
+ */
 @Suppress("MemberVisibilityCanBePrivate")
 data class ConfigOptions (
     val copyDefault: Boolean = true,
     val expectFileInJar: Boolean = true,
 ) {
 
+    /**
+     * Hybrid Builder/DSL class for [ConfigOptions].
+     *
+     * @since 1.0
+     */
     class Builder internal constructor() {
         var copyDefault: Boolean = true
         var expectFileInJar: Boolean = true
@@ -47,8 +59,21 @@ data class ConfigOptions (
     }
 
     companion object {
+        /**
+         * Creates a new ConfigOptions builder.
+         *
+         * @return Builder The builder for ConfigOptions
+         * @since 1.0
+         */
         fun builder(): Builder = Builder()
 
+        /**
+         * Creates a new ConfigOptions, configured using DSL.
+         *
+         * @param block [@kotlin.ExtensionFunctionType] Function1<Builder, Unit> Lambda to apply the desired modifications to your ConfigOptions
+         * @return ConfigOptions The configured [ConfigOptions]
+         * @since 1.0
+         */
         fun configOptions(block: Builder.() -> Unit): ConfigOptions = Builder().apply(block).build()
     }
 }

@@ -23,6 +23,7 @@
  */
 package com.github.secretx33.secretcfg.bukkit.config
 
+import com.github.secretx33.secretcfg.core.util.Predicates
 import org.bukkit.Color
 import org.bukkit.DyeColor
 import org.bukkit.Material
@@ -37,6 +38,11 @@ import org.bukkit.potion.PotionEffectType
 import java.util.function.Predicate
 import java.util.function.Supplier
 
+/**
+ * Exposes Bukkit specific method to the consumer.
+ *
+ * @since 1.0
+ */
 interface BukkitConfig {
 
     fun serialize(key: String, item: ItemStack)
@@ -51,21 +57,21 @@ interface BukkitConfig {
 
     fun getMaterial(key: String, default: Material): Material
 
-    fun getMaterialList(key: String, default: List<Material> = emptyList(), filter: Predicate<Material> = Predicate { true }): List<Material>
+    fun getMaterialList(key: String, default: List<Material> = emptyList(), filter: Predicate<Material> = Predicates.accept()): List<Material>
 
-    fun getMaterialSet(key: String, default: Set<Material> = emptySet(), filter: Predicate<Material> = Predicate { true }): Set<Material>
+    fun getMaterialSet(key: String, default: Set<Material> = emptySet(), filter: Predicate<Material> = Predicates.accept()): Set<Material>
 
     fun getEntityType(key: String, default: EntityType): EntityType
 
-    fun getEntityTypeList(key: String, default: List<EntityType> = emptyList(), filter: Predicate<EntityType> = Predicate { true }): List<EntityType>
+    fun getEntityTypeList(key: String, default: List<EntityType> = emptyList(), filter: Predicate<EntityType> = Predicates.accept()): List<EntityType>
 
-    fun getEntityTypeSet(key: String, default: Set<EntityType> = emptySet(), filter: Predicate<EntityType> = Predicate { true }): Set<EntityType>
+    fun getEntityTypeSet(key: String, default: Set<EntityType> = emptySet(), filter: Predicate<EntityType> = Predicates.accept()): Set<EntityType>
 
     fun getPotionEffect(key: String, default: PotionEffectType): PotionEffectType
 
-    fun getPotionEffectList(key: String, default: List<PotionEffectType> = emptyList(), filter: Predicate<PotionEffectType> = Predicate { true }): List<PotionEffectType>
+    fun getPotionEffectList(key: String, default: List<PotionEffectType> = emptyList(), filter: Predicate<PotionEffectType> = Predicates.accept()): List<PotionEffectType>
 
-    fun getPotionEffectSet(key: String, default: Set<PotionEffectType> = emptySet(), filter: Predicate<PotionEffectType> = Predicate { true }): Set<PotionEffectType>
+    fun getPotionEffectSet(key: String, default: Set<PotionEffectType> = emptySet(), filter: Predicate<PotionEffectType> = Predicates.accept()): Set<PotionEffectType>
 
     fun getParticle(key: String, default: Particle): Particle
 
@@ -87,11 +93,11 @@ interface BukkitConfig {
 
     fun getEnchant(key: String, default: Enchantment): Enchantment
 
-    fun getEnchantList(key: String, default: List<Enchantment> = emptyList(), filter: Predicate<Enchantment> = Predicate { true }): List<Enchantment>
+    fun getEnchantList(key: String, default: List<Enchantment> = emptyList(), filter: Predicate<Enchantment> = Predicates.accept()): List<Enchantment>
 
-    fun getEnchantSet(key: String, default: Set<Enchantment> = emptySet(), filter: Predicate<Enchantment> = Predicate { true }): Set<Enchantment>
+    fun getEnchantSet(key: String, default: Set<Enchantment> = emptySet(), filter: Predicate<Enchantment> = Predicates.accept()): Set<Enchantment>
 
-    fun getItemFlags(key: String, default: Set<ItemFlag> = emptySet(), filter: Predicate<ItemFlag> = Predicate { true }): Set<ItemFlag>
+    fun getItemFlags(key: String, default: Set<ItemFlag> = emptySet(), filter: Predicate<ItemFlag> = Predicates.accept()): Set<ItemFlag>
 
     /**
      * Parse and return a sound string Triple containing <Sound, Volume, Pitch>. String should be formatted as "Sound",

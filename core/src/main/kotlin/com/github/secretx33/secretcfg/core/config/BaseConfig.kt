@@ -25,6 +25,7 @@ package com.github.secretx33.secretcfg.core.config
 
 import com.github.secretx33.secretcfg.core.storage.filewatcher.FileModificationType
 import com.github.secretx33.secretcfg.core.storage.filewatcher.FileWatcherEvent
+import com.github.secretx33.secretcfg.core.util.Predicates
 import java.nio.file.Path
 import java.util.function.Predicate
 import kotlin.reflect.KClass
@@ -299,7 +300,7 @@ interface BaseConfig {
      * @return [T] The enum retrieved from the config, in case it was present and was accepted by the [filter], or the [default] value otherwise
      * @since 1.0
      */
-    fun <T : Enum<T>> getEnum(key: String, default: T, filter: Predicate<T> = Predicate { true }): T
+    fun <T : Enum<T>> getEnum(key: String, default: T, filter: Predicate<T> = Predicates.accept()): T
 
     /**
      * Gets a Set of enums from the file, optionally filtering the entries with the given predicate. Keep in mind that the Set will only be cached after the filter is applied, so if you want to be able to retrieve the full set later, use [Iterable.filter] function on site instead.
@@ -311,7 +312,7 @@ interface BaseConfig {
      * @return [Set<T>] A Set containing the parsed Enums, or in case the entry was missing, the default Set instead.
      * @since 1.0
      */
-    fun <T : Enum<T>> getEnumSet(key: String, default: Set<T> = emptySet(), clazz: KClass<T>, filter: Predicate<T> = Predicate { true }): Set<T>
+    fun <T : Enum<T>> getEnumSet(key: String, default: Set<T> = emptySet(), clazz: KClass<T>, filter: Predicate<T> = Predicates.accept()): Set<T>
 
 
     /**
@@ -324,7 +325,7 @@ interface BaseConfig {
      * @return [List<T>] A List containing the parsed Enums, or in case the entry was missing, the default List instead.
      * @since 1.0
      */
-    fun <T : Enum<T>> getEnumList(key: String, default: List<T> = emptyList(), clazz: KClass<T>, filter: Predicate<T> = Predicate { true }): List<T>
+    fun <T : Enum<T>> getEnumList(key: String, default: List<T> = emptyList(), clazz: KClass<T>, filter: Predicate<T> = Predicates.accept()): List<T>
 
     /**
      * Gets a Pair of Ints containing the <Min, Max> value of that Int range. the range can be just one number, or a range made like "1 - 5"/

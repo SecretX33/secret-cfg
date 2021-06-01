@@ -29,6 +29,8 @@ import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Provider to cache created FileWatchers for multiple files
+ *
+ * @since 1.0
  */
 object FileWatcherProvider {
 

@@ -25,6 +25,7 @@ package com.github.secretx33.secretcfg.bukkit.enumconfig
 
 import com.github.secretx33.secretcfg.core.enumconfig.ConfigEnum
 import com.github.secretx33.secretcfg.core.exception.InvalidDefaultParameterException
+import com.github.secretx33.secretcfg.core.util.Predicates
 import org.bukkit.Color
 import org.bukkit.DyeColor
 import org.bukkit.Material
@@ -40,6 +41,11 @@ import java.util.function.Predicate
 import java.util.function.Supplier
 import kotlin.reflect.KClass
 
+/**
+ * Exposes the Bukkit specific methods, adapted to accept special [ConfigEnum] entries instead of string keys.
+ *
+ * @since 1.0
+ */
 interface BukkitEnumConfig<U> where U : ConfigEnum, U : Enum<U> {
 
     val file: String
@@ -60,21 +66,21 @@ interface BukkitEnumConfig<U> where U : ConfigEnum, U : Enum<U> {
 
     fun getMaterial(key: U, default: Material = key.safeDefault()): Material
 
-    fun getMaterialList(key: U, default: List<Material> = key.safeDefault(), filter: Predicate<Material> = Predicate { true }): List<Material>
+    fun getMaterialList(key: U, default: List<Material> = key.safeDefault(), filter: Predicate<Material> = Predicates.accept()): List<Material>
 
-    fun getMaterialSet(key: U, default: Set<Material> = key.safeDefault(), filter: Predicate<Material> = Predicate { true }): Set<Material>
+    fun getMaterialSet(key: U, default: Set<Material> = key.safeDefault(), filter: Predicate<Material> = Predicates.accept()): Set<Material>
 
     fun getEntityType(key: U, default: EntityType = key.safeDefault()): EntityType
 
-    fun getEntityTypeList(key: U, default: List<EntityType> = key.safeDefault(), filter: Predicate<EntityType> = Predicate { true }): List<EntityType>
+    fun getEntityTypeList(key: U, default: List<EntityType> = key.safeDefault(), filter: Predicate<EntityType> = Predicates.accept()): List<EntityType>
 
-    fun getEntityTypeSet(key: U, default: Set<EntityType> = key.safeDefault(), filter: Predicate<EntityType> = Predicate { true }): Set<EntityType>
+    fun getEntityTypeSet(key: U, default: Set<EntityType> = key.safeDefault(), filter: Predicate<EntityType> = Predicates.accept()): Set<EntityType>
 
     fun getPotionEffect(key: U, default: PotionEffectType = key.safeDefault()): PotionEffectType
 
-    fun getPotionEffectList(key: U, default: List<PotionEffectType> = key.safeDefault(), filter: Predicate<PotionEffectType> = Predicate { true }): List<PotionEffectType>
+    fun getPotionEffectList(key: U, default: List<PotionEffectType> = key.safeDefault(), filter: Predicate<PotionEffectType> = Predicates.accept()): List<PotionEffectType>
 
-    fun getPotionEffectSet(key: U, default: Set<PotionEffectType> = key.safeDefault(), filter: Predicate<PotionEffectType> = Predicate { true }): Set<PotionEffectType>
+    fun getPotionEffectSet(key: U, default: Set<PotionEffectType> = key.safeDefault(), filter: Predicate<PotionEffectType> = Predicates.accept()): Set<PotionEffectType>
 
     fun getParticle(key: U, default: Particle = key.safeDefault()): Particle
 
@@ -96,11 +102,11 @@ interface BukkitEnumConfig<U> where U : ConfigEnum, U : Enum<U> {
 
     fun getEnchant(key: U, default: Enchantment = key.safeDefault()): Enchantment
 
-    fun getEnchantList(key: U, default: List<Enchantment> = key.safeDefault(), filter: Predicate<Enchantment> = Predicate { true }): List<Enchantment>
+    fun getEnchantList(key: U, default: List<Enchantment> = key.safeDefault(), filter: Predicate<Enchantment> = Predicates.accept()): List<Enchantment>
 
-    fun getEnchantSet(key: U, default: Set<Enchantment> = key.safeDefault(), filter: Predicate<Enchantment> = Predicate { true }): Set<Enchantment>
+    fun getEnchantSet(key: U, default: Set<Enchantment> = key.safeDefault(), filter: Predicate<Enchantment> = Predicates.accept()): Set<Enchantment>
 
-    fun getItemFlags(key: U, default: Set<ItemFlag> = key.safeDefault(), filter: Predicate<ItemFlag> = Predicate { true }): Set<ItemFlag>
+    fun getItemFlags(key: U, default: Set<ItemFlag> = key.safeDefault(), filter: Predicate<ItemFlag> = Predicates.accept()): Set<ItemFlag>
 
     /**
      * Parse and return a sound string Triple containing <Sound, Volume, Pitch>. String should be formatted as "Sound",

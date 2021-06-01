@@ -21,15 +21,40 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.github.secretx33.secretcfg.bukkit.enumconfig
+package com.github.secretx33.secretcfg.core.util
 
-import com.github.secretx33.secretcfg.bukkit.config.Config
-import com.github.secretx33.secretcfg.core.enumconfig.BaseEnumConfig
-import com.github.secretx33.secretcfg.core.enumconfig.ConfigEnum
+import java.util.function.Predicate
 
 /**
- * Basic interface to wire all other configuration interfaces.
+ * Predicates used as default to always accept or refuse item.
  *
  * @since 1.0
  */
-interface EnumConfig<U> : BukkitEnumConfig<U>, BaseEnumConfig<U>, Config where U : ConfigEnum, U : Enum<U>
+object Predicates {
+
+    private val ALWAYS_TRUE = object : Predicate<Any?> {
+        override fun test(t: Any?): Boolean = true
+
+        override fun and(other: Predicate<Any?>): Predicate<Any?> = other
+
+        override fun or(other: Predicate<Any?>): Predicate<Any?> = this
+
+        override fun negate(): Predicate<Any?> = refuse()
+    }
+
+    private val ALWAYS_FALSE = object : Predicate<Any?> {
+        override fun test(t: Any?): Boolean = false
+
+        override fun and(other: Predicate<Any?>): Predicate<Any?> = this
+
+        override fun or(other: Predicate<Any?>): Predicate<Any?> = other
+
+        override fun negate(): Predicate<Any?> = accept()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun <T> accept(): Predicate<T> = ALWAYS_TRUE as Predicate<T>
+
+    @Suppress("UNCHECKED_CAST")
+    fun <T> refuse(): Predicate<T> = ALWAYS_FALSE as Predicate<T>
+}
