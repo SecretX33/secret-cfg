@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.github.secretx33.secretcfg.core.utils
+package com.github.secretx33.secretcfg.core.util
 
 import kotlin.math.max
 import kotlin.math.min

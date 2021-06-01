@@ -25,73 +25,103 @@ package com.github.secretx33.secretcfg.core.config
 
 import com.github.secretx33.secretcfg.core.exception.DifferentCachedTypeException
 import com.github.secretx33.secretcfg.core.manager.YamlManager
-import com.github.secretx33.secretcfg.core.utils.RangeParser
-import com.github.secretx33.secretcfg.core.utils.values
-import java.io.File
-import java.util.*
+import com.github.secretx33.secretcfg.core.storage.FileWatcherProvider
+import com.github.secretx33.secretcfg.core.storage.filewatcher.FileModificationType
+import com.github.secretx33.secretcfg.core.storage.filewatcher.FileWatcherEvent
+import com.github.secretx33.secretcfg.core.util.RangeParser
+import com.github.secretx33.secretcfg.core.util.extension.values
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.nio.file.Path
+import java.util.EnumSet
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Predicate
 import java.util.function.Supplier
 import java.util.logging.Logger
+import kotlin.io.path.nameWithoutExtension
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.reflect.KClass
 
-open class AbstractConfig (
+abstract class AbstractConfig (
     plugin: Any,
-    dataFolder: File,
-    path: String,
+    dataFolder: Path,
+    path: Path,
     protected val logger: Logger,
-    copyDefault: Boolean,
-    filePresentInJar: Boolean,
+    options: ConfigOptions,
 ) : BaseConfig {
 
-    protected val manager = YamlManager(plugin, dataFolder, path, logger, copyDefault, filePresentInJar)
+    protected val manager = YamlManager(plugin, dataFolder, path, logger, options)
     protected val cache = ConcurrentHashMap<String, Any>()
+    private val watcher = FileWatcherProvider.get(dataFolder).getWatcher(manager.relativePath)
 
-    override fun reload() {
-        manager.reload()
-        cache.clear()
+    init {
+        watcher.addListener(watcherDefaultTypes) {
+            CoroutineScope(Dispatchers.IO).launch {
+                delay(200L)
+                reload()
+            }
+        }
     }
+
+    override suspend fun reload() {
+        if(manager.reload()) cache.clear()
+    }
+
+    override fun listener(modificationType: Set<FileModificationType>, listener: suspend (FileWatcherEvent) -> Unit)
+        = watcher.addListener(modificationType, listener)
 
     override fun has(key: String): Boolean = manager.contains(key)
 
     override fun contains(key: String): Boolean = has(key)
 
     override fun set(key: String, value: Any) {
+        watcher.recordChange(path)
         manager.set(key, value)
         cache[key] = value
     }
 
     override fun setBoolean(key: String, value: Boolean) {
+        watcher.recordChange(path)
         manager.setBoolean(key, value)
         cache[key] = value
     }
 
     override fun setInt(key: String, value: Int) {
+        watcher.recordChange(path)
         manager.setInt(key, value)
         cache[key] = value
     }
 
     override fun setDouble(key: String, value: Double) {
+        watcher.recordChange(path)
         manager.setDouble(key, value)
         cache[key] = value
     }
 
     override fun setString(key: String, value: String) {
+        watcher.recordChange(path)
         manager.setString(key, value)
         cache[key] = value
     }
 
-    override fun save() = manager.save()
+    override fun setStringList(key: String, value: Collection<String>) {
+        watcher.recordChange(path)
+        manager.setStringList(key, value)
+        cache[key] = value
+    }
+
+    override suspend fun save() = manager.save()
 
     override val file: String
         get() = manager.fileName
 
     override val fileWithoutExtension: String
-        get() = manager.file.nameWithoutExtension
+        get() = path.nameWithoutExtension
 
-    override val path: String
+    override val path: Path
         get() = manager.relativePath
 
     override fun getKeys(): Set<String> = manager.getKeys()
@@ -108,7 +138,7 @@ open class AbstractConfig (
         }.let { runCatching { it as T }.getOrElse { cacheException(key, it, default) } }
     }
 
-    override fun getBoolean(key: String): Boolean? = manager.getBoolean(key)
+    override fun getBoolean(key: String): Boolean? = cache[key] as? Boolean ?: manager.getBoolean(key)
 
     override fun getBoolean(key: String, default: Boolean): Boolean {
         return cache.getOrPut(key) {
@@ -116,22 +146,22 @@ open class AbstractConfig (
         }.let { runCatching { it as Boolean }.getOrElse { cacheException(key, it, default) } }
     }
 
-    override fun getInt(key: String): Int? = manager.getInt(key)
+    override fun getInt(key: String): Int? = cache[key] as? Int ?: manager.getInt(key)
 
     override fun getInt(key: String, default: Int, minValue: Int, maxValue: Int): Int
         = cachedAny(key, default) { (manager.get(key) as? Int)?.let { int -> max(minValue, min(maxValue, int)) } }
 
-    override fun getFloat(key: String): Float? = manager.getFloat(key)
+    override fun getFloat(key: String): Float? = cache[key] as? Float ?: manager.getFloat(key)
 
     override fun getFloat(key: String, default: Float, minValue: Float, maxValue: Float): Float
         = cachedAny(key, default) { (manager.get(key, default) as? Float)?.let { float -> max(minValue, min(maxValue, float)) } }
 
-    override fun getDouble(key: String): Double? = manager.getDouble(key)
+    override fun getDouble(key: String): Double? = cache[key] as? Double ?: manager.getDouble(key)
 
     override fun getDouble(key: String, default: Double, minValue: Double, maxValue: Double): Double
         = cachedAny(key, default) { (manager.get(key, default) as? Double)?.let { double -> max(minValue, min(maxValue, double)) } }
 
-    override fun getString(key: String): String? = manager.getString(key)
+    override fun getString(key: String): String? = cache[key] as? String ?: manager.getString(key)
 
     override fun getString(key: String, default: String): String
         = cache.getOrPut(key) { manager.getString(key, default) }
@@ -139,6 +169,9 @@ open class AbstractConfig (
 
     override fun getStringList(key: String, default: List<String>): List<String>
         = cachedList(key, default) { manager.getStringList(key, default) }
+
+    override fun getStringSet(key: String, default: Set<String>): Set<String>
+        = cachedSet(key, default) { manager.getStringSet(key, default) }
 
     override fun <T : Enum<T>> getEnum(key: String, default: T, filter: Predicate<T>): T {
         return cachedEnum(key, default, filter) { enum ->
@@ -152,7 +185,7 @@ open class AbstractConfig (
     override fun <T : Enum<T>> getEnumSet(key: String, default: Set<T>, clazz: KClass<T>, filter: Predicate<T>): Set<T> {
         return filteredCachedSet(key, default, filter) {
             // parse the config entry, warning about possibly invalid values
-            manager.getStringSet(key).mapNotNullTo(HashSet()) { item ->
+            manager.getStringSet(key).mapNotNull { item ->
                 clazz.values().firstOrNull { it.name.equals(item, ignoreCase = true) }?.takeIf { filter.test(it) } ?: run {
                     warnInvalidEntry(key, item)
                     null
@@ -364,6 +397,7 @@ open class AbstractConfig (
         const val INVALID_ENUM_ENTRY = "[%s] On key '%s', value passed '%s' is invalid, please fix this entry in the %s and reload the configs."
         const val INVALID_ENUM_ENTRY_WITH_DEFAULT = "[%s] Error while trying to get key '%s', value passed '%s' is invalid, please fix this entry in the %s and reload the configs, temporarily defaulting to %s."
         const val DIFFERENT_CACHED_TYPE = "Tried to override previous cached value for key '%s' type '%s' with '%s' in file '%s', please check all your get methods for that key and make sure they're all requiring the same type. If you are seeing this error and are not the developer, you should copy this message and send it to they so they can fix the issue."
-    }
 
+        val watcherDefaultTypes: Set<FileModificationType> = EnumSet.of(FileModificationType.CREATE, FileModificationType.MODIFY)
+    }
 }

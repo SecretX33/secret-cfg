@@ -23,6 +23,9 @@
  */
 package com.github.secretx33.secretcfg.core.config
 
+import com.github.secretx33.secretcfg.core.storage.filewatcher.FileModificationType
+import com.github.secretx33.secretcfg.core.storage.filewatcher.FileWatcherEvent
+import java.nio.file.Path
 import java.util.function.Predicate
 import kotlin.reflect.KClass
 
@@ -51,13 +54,23 @@ interface BaseConfig {
      *
      * @since 1.0
      */
-    val path: String
+    val path: Path
 
     /**
      * Reload the configs, forcing the values to be cached again
+     *
      * @since 1.0
      */
-    fun reload()
+    suspend fun reload()
+
+    /**
+     * Adds a listener that will listen to all file modifications of specified types.
+     *
+     * @param modificationType Set<FileModificationType> A set containing all types of file modification the listener needs to listen to, **cannot be empty**
+     * @param listener Consumer<FileWatcherEvent> A listener that will consume all specified event types of this file, runs on [Dispatchers.Default]
+     * @since 1.0
+     */
+    fun listener(modificationType: Set<FileModificationType>, listener: suspend (FileWatcherEvent) -> Unit)
 
     /**
      * Checks in the file if a certain key is present
@@ -122,11 +135,19 @@ interface BaseConfig {
     fun setString(key: String, value: String)
 
     /**
+     * Sets a String Collection in a key on the file, does not persist the changes, user must manually call [save] afterwards
+     *
+     * @param key String The key where the [value] should be saved at
+     * @param value String The string collection to be saved on the [key]
+     */
+    fun setStringList(key: String, value: Collection<String>)
+
+    /**
      * Save the currently edited configurations to the file, this operation should not erase any comments of the file.
      *
      * @since 1.0
      */
-    fun save()
+    suspend fun save()
 
     /**
      * Get the keys directly under root.
@@ -250,7 +271,7 @@ interface BaseConfig {
     fun getString(key: String, default: String): String
 
     /**
-     * Retrieves a string list from the config file
+     * Retrieves a string list from the config file.
      *
      * @param key [String] Where the string list is stored at
      * @param default [List<String>] A fallback in case the specified [key] is missing
@@ -258,6 +279,16 @@ interface BaseConfig {
      * @since 1.0
      */
     fun getStringList(key: String, default: List<String> = emptyList()): List<String>
+
+    /**
+     * Retrieves a string set from the config file.
+     *
+     * @param key [String] Where the string set is stored at
+     * @param default [Set<String>] A fallback in case the specified [key] is missing
+     * @return [Set<String>] A set containing the strings retrieved from the config file, or the [default] set in case the key was missing
+     * @since 1.0
+     */
+    fun getStringSet(key: String, default: Set<String> = emptySet()): Set<String>
 
     /**
      * Gets a single enum from a config key, optionally filtering the enum.

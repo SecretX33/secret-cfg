@@ -32,7 +32,12 @@ import com.github.secretx33.secretcfg.bukkit.parser.ColorParser
 import com.github.secretx33.secretcfg.bukkit.parser.ItemSerializer
 import com.github.secretx33.secretcfg.bukkit.parser.PatternParser
 import com.github.secretx33.secretcfg.core.config.AbstractConfig
-import org.bukkit.*
+import com.github.secretx33.secretcfg.core.config.ConfigOptions
+import org.bukkit.Color
+import org.bukkit.DyeColor
+import org.bukkit.Material
+import org.bukkit.Particle
+import org.bukkit.Sound
 import org.bukkit.block.banner.Pattern
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.EntityType
@@ -40,23 +45,23 @@ import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
 import org.bukkit.potion.PotionEffectType
+import java.nio.file.Path
 import java.util.function.Predicate
 import java.util.function.Supplier
 import java.util.logging.Logger
 
 class ConfigImpl (
     plugin: Plugin,
-    path: String,
+    path: Path,
     logger: Logger = plugin.logger,
-    copyDefault: Boolean = true,
-    filePresentInJar: Boolean = true,
-) : AbstractConfig(plugin, plugin.dataFolder, path, logger, copyDefault, filePresentInJar), Config {
+    options: ConfigOptions,
+) : AbstractConfig(plugin, plugin.dataFolder.toPath(), path, logger, options), Config {
 
     private val colorParser = ColorParser(manager.fileName, logger)
 
     // ItemStack Serialization & Deserialization
 
-    override fun serialize(key: String, item: ItemStack) = set(key, ItemSerializer.toString(item))
+    override fun serialize(key: String, item: ItemStack) = setString(key, ItemSerializer.toString(item))
 
     override fun deserializeItem(key: String): ItemStack? {
         val item = getString(key, "").takeIf { it.isNotBlank() } ?: return null

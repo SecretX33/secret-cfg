@@ -23,73 +23,85 @@
  */
 package com.github.secretx33.secretcfg.core.manager
 
-import kotlinx.coroutines.CoroutineScope
+import com.github.secretx33.secretcfg.core.config.ConfigOptions
+import com.github.secretx33.secretcfg.core.storage.FileWatcherProvider
+import com.github.secretx33.secretcfg.core.util.extension.nameEndsWithAny
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.spongepowered.configurate.CommentedConfigurationNode
 import org.spongepowered.configurate.yaml.NodeStyle
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader
-import java.io.File
-import java.io.IOException
 import java.io.InputStream
+import java.nio.file.Path
 import java.util.logging.Level
 import java.util.logging.Logger
+import kotlin.io.path.Path
+import kotlin.io.path.absolute
+import kotlin.io.path.createDirectories
+import kotlin.io.path.createFile
+import kotlin.io.path.exists
+import kotlin.io.path.name
+import kotlin.io.path.readLines
+import kotlin.io.path.writeBytes
 import kotlin.math.max
 
 /**
- *  * Class responsive to manage low level IO operations to the file, as well
+ * Class responsive to manage low level IO operations to the file, as well
  * as saving and keeping the commentaries, it must work on all platforms.
  *
- * @property plugin Any an instance of the plugin's class
- * @property dataFolder File folder where the configurations must be placed at
- * @property logger Logger an instance of logger
- * @property fileName String the name of the file, with extension
- * @property relativePath String relative path to the file
- * @property file File the file itself
- * @constructor
+ * @property plugin Any An instance of the plugin's class
+ * @property dataFolder Path Folder where the configurations must be placed at
+ * @property logger Logger An instance of logger
+ * @property path Path The path to file, starting from the dataFolder
+ * @property options ConfigOptions Options of this manager
+ * @property relativePath Path The relative path to file, starting from the dataFolder
+ * @property file Path The full, absolute path to the file
+ * @property fileName String Extension function to get the name of the file
  */
 class YamlManager (
     private val plugin: Any,
-    private val dataFolder: File,
-    path: String,
+    private val dataFolder: Path,
+    path: Path,
     private val logger: Logger,
-    private val copyDefault: Boolean,
-    private val filePresentInJar: Boolean,
+    private val options: ConfigOptions,
 ) {
+    private val saveLock = Mutex()
+    private val loader = newYamlLoader()
+    private lateinit var root: CommentedConfigurationNode
 
-    val fileName: String = path.replace('\\', '/').split('/').last().appendIfMissing(".yml")
-    val relativePath: String = path.replace('\\', '/').appendIfMissing(".yml")
-    val file: File = File(dataFolder, relativePath)
-    private val loader = YamlConfigurationLoader.builder().indent(2).nodeStyle(NodeStyle.BLOCK).file(file).defaultOptions { it.shouldCopyDefaults(copyDefault) }.build()
-    private var root = loader.load()
-    private val lock = Mutex()
+    val relativePath: Path = if(path.nameEndsWithAny(".yml", ".yaml")) path else Path("$path.yml")
+    val file: Path = dataFolder.resolve(relativePath).absolute()
+
+    private val watcher = FileWatcherProvider.get(dataFolder).getWatcher(relativePath)
+
+    val fileName: String
+        get() = relativePath.name
 
     init { reload() }
 
-    fun reload() {
-        if(!dataFolder.exists()) dataFolder.mkdir()
-
-        try {
+    fun reload(): Boolean {
+        return try {
             file.createIfMissing()
             root = loader.load()
+            true
         } catch (e: Exception) {
             logger.log(Level.SEVERE, "Error while reloading file '$fileName'", e)
+            false
         }
     }
 
-    private fun File.createIfMissing() {
+    private fun Path.createIfMissing() {
         if(exists()) return
 
-        createParentDirs()
-        createNewFile()
-        if(!copyDefault) return
+        createDirectories()
+        createFile()
+        if(!options.copyDefault) return
 
-        val internalFile: InputStream = plugin.javaClass.classLoader.getResourceAsStream(relativePath)
-            ?: plugin.javaClass.classLoader.getResourceAsStream(fileName)
-            ?: if(filePresentInJar) throw IllegalArgumentException("resource '$fileName' was not found")
-            else return
+        val internalFile: InputStream = plugin.javaClass.classLoader.getResourceAsStream(relativePath.toString())
+            ?: plugin.javaClass.classLoader.getResourceAsStream(name)
+            ?: if(options.expectFileInJar) throw IllegalStateException("resource '$fileName' was not found in jar") else return
 
         writeBytes(internalFile.readBytes())
     }
@@ -124,48 +136,47 @@ class YamlManager (
     fun getStringSet(key: String, default: Set<String> = emptySet()): Set<String>
         = root.parseNode(key).getList(String::class.java)?.toSet() ?: default
 
-    fun set(key: String, value: Any) = root.parseNode(key).set(value)
+    fun set(key: String, value: Any) { root.parseNode(key).set(value) }
 
-    fun setBoolean(key: String, value: Boolean) = root.parseNode(key).set(Boolean::class.java, value)
+    fun setBoolean(key: String, value: Boolean) { root.parseNode(key).set(Boolean::class.java, value) }
 
-    fun setInt(key: String, value: Int) = root.parseNode(key).set(Int::class.java, value)
+    fun setInt(key: String, value: Int) { root.parseNode(key).set(Int::class.java, value) }
 
-    fun setDouble(key: String, value: Double) = root.parseNode(key).set(Double::class.java, value)
+    fun setDouble(key: String, value: Double) { root.parseNode(key).set(Double::class.java, value) }
 
-    fun setString(key: String, value: String) = root.parseNode(key).set(String::class.java, value)
+    fun setString(key: String, value: String) { root.parseNode(key).set(String::class.java, value) }
 
-    fun setStringList(key: String, value: List<String>) {
-        root.parseNode(key).setList(String::class.java, value)
+    fun setStringList(key: String, value: Collection<String>) {
+        val list = when(value) {
+            is List<String> -> value
+            else -> value.toList()
+        }
+        root.parseNode(key).setList(String::class.java, list)
     }
 
-    fun setStringSet(key: String, value: Set<String>) {
-        setStringList(key, value.toList())
-    }
+    fun getKeys(): Set<String> = root.childrenMap().keys.mapNotNull { it.toString() }.toSet()
 
-    fun getKeys(): Set<String> = root.childrenMap().keys.mapNotNull { it.toString() }.toHashSet()
-
-    fun getKeys(path: String): Set<String> = root.parseNode(path).childrenMap().keys.mapNotNull { it.toString() }.toHashSet()
+    fun getKeys(path: String): Set<String> = root.parseNode(path).childrenMap().keys.mapNotNull { it.toString() }.toSet()
 
     fun contains(key: String): Boolean = get(key) != null
 
     private fun CommentedConfigurationNode.parseNode(path: String) = node(path.split('.'))
 
-    fun save() {
-        CoroutineScope(Dispatchers.IO).launch {
-            lock.withLock {
-                try {
-                    file.createIfMissing()
-                    val oldFile = file.getLines()
-                    val comments = parseFileComments(oldFile)
-                    // commit all changes made to the file, erasing the comments in the process
-                    loader.save(root)
-                    // re-add comments to the file
-                    val newFile = addCommentsToFile(comments)
-                    // and write the file on the disk
-                    file.writeLines(newFile)
-                } catch (e: Exception) {
-                    logger.log(Level.WARNING, "Error while saving file $fileName", e)
-                }
+    suspend fun save() = withContext(Dispatchers.IO) {
+        saveLock.withLock {
+            watcher.recordChange(relativePath)
+            try {
+                file.createIfMissing()
+                val oldFile = file.getLines()
+                val comments = parseFileComments(oldFile)
+                // commit all changes made to the file, erasing the comments in the process
+                loader.save(root)
+                // re-add comments to the file
+                val newFile = addCommentsToFile(comments)
+                // and write the file on the disk
+                file.writeLines(newFile)
+            } catch (e: Exception) {
+                logger.log(Level.WARNING, "Error while saving file $fileName", e)
             }
         }
     }
@@ -315,25 +326,11 @@ class YamlManager (
         return builder.toString().toByteArray(charset = CHARSET)
     }
 
-    private fun File.getLines(): List<String> = readLines(CHARSET).map { line -> line.replace("\t", "  ") }
+    private fun Path.getLines(): List<String> = readLines(CHARSET).map { line -> line.replace("\t", "  ") }
 
-    private fun File.writeLines(fileLines: List<String>){ runCatching { writeBytes(fileLines.joinToArray()) } }
+    private fun Path.writeLines(fileLines: List<String>){ runCatching { writeBytes(fileLines.joinToArray()) } }
 
-    private fun File.createParentDirs()  {
-        val parent = canonicalFile.parentFile
-        if (parent != null) {
-            parent.mkdirs()
-            if (!parent.isDirectory) {
-                throw IOException("Unable to create parent directories of $file")
-            }
-        }
-    }
-
-    private fun String.appendIfMissing(append: String, ignoreCase: Boolean = true): String {
-        if(!this.endsWith(append, ignoreCase = ignoreCase))
-            return "$this$append"
-        return this
-    }
+    private fun newYamlLoader() = YamlConfigurationLoader.builder().indent(2).nodeStyle(NodeStyle.BLOCK).path(file).defaultOptions { it.shouldCopyDefaults(options.copyDefault) }.build()
 
     private companion object {
         val CHARSET = Charsets.UTF_8

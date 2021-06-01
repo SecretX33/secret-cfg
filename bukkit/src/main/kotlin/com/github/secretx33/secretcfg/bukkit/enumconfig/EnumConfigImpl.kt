@@ -26,9 +26,14 @@ package com.github.secretx33.secretcfg.bukkit.enumconfig
 import com.github.secretx33.secretcfg.bukkit.config.BukkitConfig
 import com.github.secretx33.secretcfg.bukkit.config.Config
 import com.github.secretx33.secretcfg.bukkit.config.ConfigImpl
+import com.github.secretx33.secretcfg.core.config.ConfigOptions
 import com.github.secretx33.secretcfg.core.enumconfig.AbstractEnumConfig
 import com.github.secretx33.secretcfg.core.enumconfig.ConfigEnum
-import org.bukkit.*
+import org.bukkit.Color
+import org.bukkit.DyeColor
+import org.bukkit.Material
+import org.bukkit.Particle
+import org.bukkit.Sound
 import org.bukkit.block.banner.Pattern
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.EntityType
@@ -36,6 +41,7 @@ import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
 import org.bukkit.potion.PotionEffectType
+import java.nio.file.Path
 import java.util.function.Predicate
 import java.util.function.Supplier
 import java.util.logging.Logger
@@ -43,14 +49,14 @@ import kotlin.reflect.KClass
 
 class EnumConfigImpl<U> (
     plugin: Plugin,
-    path: String,
+    path: Path,
     override val configClass: KClass<U>,
-    logger: Logger = plugin.logger,
-    copyDefault: Boolean = true,
-    filePresentInJar: Boolean = true,
-    private val bukkitConfig: Config = ConfigImpl(plugin, path, logger, copyDefault, filePresentInJar),
+    logger: Logger,
+    options: ConfigOptions,
+    private val bukkitConfig: Config = ConfigImpl(plugin, path, logger, options),
 ) : AbstractEnumConfig<U>(configClass, bukkitConfig),
-    BukkitConfig by bukkitConfig, EnumConfig<U> where U : ConfigEnum, U : Enum<U> {
+    BukkitConfig by bukkitConfig,
+    EnumConfig<U> where U : ConfigEnum, U : Enum<U> {
 
     override fun serialize(key: U, item: ItemStack) = serialize(key.path, item)
 

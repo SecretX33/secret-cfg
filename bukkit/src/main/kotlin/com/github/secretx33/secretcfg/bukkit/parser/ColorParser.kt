@@ -23,7 +23,7 @@
  */
 package com.github.secretx33.secretcfg.bukkit.parser
 
-import com.github.secretx33.secretcfg.core.utils.fields
+import com.github.secretx33.secretcfg.core.util.fields
 import org.bukkit.Color
 import java.util.logging.Logger
 

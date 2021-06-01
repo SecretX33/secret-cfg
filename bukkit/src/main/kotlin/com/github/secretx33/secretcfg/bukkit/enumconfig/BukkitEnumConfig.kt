@@ -25,7 +25,11 @@ package com.github.secretx33.secretcfg.bukkit.enumconfig
 
 import com.github.secretx33.secretcfg.core.enumconfig.ConfigEnum
 import com.github.secretx33.secretcfg.core.exception.InvalidDefaultParameterException
-import org.bukkit.*
+import org.bukkit.Color
+import org.bukkit.DyeColor
+import org.bukkit.Material
+import org.bukkit.Particle
+import org.bukkit.Sound
 import org.bukkit.block.banner.Pattern
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.EntityType

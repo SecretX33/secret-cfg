@@ -23,7 +23,11 @@
  */
 package com.github.secretx33.secretcfg.bukkit.config
 
-import org.bukkit.*
+import org.bukkit.Color
+import org.bukkit.DyeColor
+import org.bukkit.Material
+import org.bukkit.Particle
+import org.bukkit.Sound
 import org.bukkit.block.banner.Pattern
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.EntityType

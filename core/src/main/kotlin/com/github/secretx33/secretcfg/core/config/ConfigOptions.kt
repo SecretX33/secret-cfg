@@ -21,13 +21,34 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.github.secretx33.secretcfg.core.utils
+package com.github.secretx33.secretcfg.core.config
 
-import kotlin.reflect.KClass
+@Suppress("MemberVisibilityCanBePrivate")
+data class ConfigOptions (
+    val copyDefault: Boolean = true,
+    val expectFileInJar: Boolean = true,
+) {
 
-/**
- * Extension method to give generic enum classes access to the static method [Enum#values()][Enum.values()].
- *
- * @since 1.0
- */
-internal fun <T : Enum<T>> KClass<out T>.values() = java.enumConstants
+    class Builder internal constructor() {
+        var copyDefault: Boolean = true
+        var expectFileInJar: Boolean = true
+
+        fun copyDefault(boolean: Boolean): Builder {
+            copyDefault = boolean
+            return this
+        }
+
+        fun expectFileInJar(boolean: Boolean): Builder {
+            expectFileInJar = boolean
+            return this
+        }
+
+        fun build() = ConfigOptions(copyDefault, expectFileInJar)
+    }
+
+    companion object {
+        fun builder(): Builder = Builder()
+
+        fun configOptions(block: Builder.() -> Unit): ConfigOptions = Builder().apply(block).build()
+    }
+}

@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.5.0"
+    kotlin("jvm") version "1.5.10"
     id("maven-publish")
     id("com.github.hierynomus.license") version "0.16.1"
 }
@@ -12,7 +12,6 @@ allprojects {
 
     repositories {
         mavenCentral()
-        jcenter()
         maven { url = uri("https://oss.sonatype.org/content/groups/public/") }
         maven { url = uri("https://repo.codemc.org/repository/maven-public/") }
         maven { url = uri("https://plugins.gradle.org/m2/") }
@@ -29,8 +28,8 @@ subprojects {
 
     dependencies {
         testImplementation(kotlin("test-junit5"))
-        testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
-        testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.6.0")
+        testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.2")
+        testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.2")
         implementation("org.spongepowered:configurate-core:4.1.1")
         implementation("org.spongepowered:configurate-yaml:4.1.1")
         implementation("org.spongepowered:configurate-extra-kotlin:4.1.1")
