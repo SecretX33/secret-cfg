@@ -28,7 +28,7 @@ import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Provider to cache created FileWatchers for multiple files
+ * Provider to cache created FileWatchers for multiple files.
  *
  * @since 1.0
  */
@@ -40,11 +40,11 @@ object FileWatcherProvider {
     private val watchers = ConcurrentHashMap<Path, FileWatcher>()
 
     /**
-     * Gets a file watcher able to register listeners for file changes
+     * Gets a file watcher able to register listeners for file changes.
      *
      * @param basePath Path Base folder of the application that needs to be monitored, usually the DataFolder in case of Plugins
      * @param autoRegisterNewSubDirectories Boolean If new subfolders should be registered automatically
-     * @return FileWatcher The file watchers responsible for that path
+     * @return FileWatcher The file watcher responsible for that path
      */
     fun get(basePath: Path, autoRegisterNewSubDirectories: Boolean = true): FileWatcher
         = watchers.getOrPut(basePath) { FileWatcher(basePath, autoRegisterNewSubDirectories) }
