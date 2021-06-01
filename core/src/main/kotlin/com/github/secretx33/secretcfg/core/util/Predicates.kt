@@ -37,7 +37,7 @@ object Predicates {
 
         override fun and(other: Predicate<Any?>): Predicate<Any?> = other
 
-        override fun or(other: Predicate<Any?>): Predicate<Any?> = this
+        override fun or(other: Predicate<Any?>?): Predicate<Any?> = this
 
         override fun negate(): Predicate<Any?> = refuse()
     }
@@ -45,7 +45,7 @@ object Predicates {
     private val ALWAYS_FALSE = object : Predicate<Any?> {
         override fun test(t: Any?): Boolean = false
 
-        override fun and(other: Predicate<Any?>): Predicate<Any?> = this
+        override fun and(other: Predicate<Any?>?): Predicate<Any?> = this
 
         override fun or(other: Predicate<Any?>): Predicate<Any?> = other
 

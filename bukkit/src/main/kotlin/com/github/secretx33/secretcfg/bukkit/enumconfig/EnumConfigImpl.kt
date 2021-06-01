@@ -47,7 +47,7 @@ import java.util.function.Supplier
 import java.util.logging.Logger
 import kotlin.reflect.KClass
 
-class EnumConfigImpl<U> (
+class EnumConfigImpl<U> internal constructor(
     plugin: Plugin,
     path: Path,
     override val configClass: KClass<U>,

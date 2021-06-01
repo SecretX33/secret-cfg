@@ -50,10 +50,10 @@ import java.util.function.Predicate
 import java.util.function.Supplier
 import java.util.logging.Logger
 
-class ConfigImpl (
+class ConfigImpl internal constructor(
     plugin: Plugin,
     path: Path,
-    logger: Logger = plugin.logger,
+    logger: Logger,
     options: ConfigOptions,
 ) : AbstractConfig(plugin, plugin.dataFolder.toPath(), path, logger, options), Config {
 
