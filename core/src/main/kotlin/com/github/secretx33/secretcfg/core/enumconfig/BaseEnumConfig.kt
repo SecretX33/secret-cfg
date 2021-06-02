@@ -24,6 +24,7 @@
 package com.github.secretx33.secretcfg.core.enumconfig
 
 import com.github.secretx33.secretcfg.core.exception.InvalidDefaultParameterException
+import com.github.secretx33.secretcfg.core.util.Predicates
 import java.util.function.Predicate
 import kotlin.reflect.KClass
 
@@ -164,7 +165,7 @@ interface BaseEnumConfig<U> where U : ConfigEnum, U : Enum<U>  {
      * @return [T] The enum retrieved from the config, in case it was present and was accepted by the [filter], or the [default] value
      * @since 1.0
      */
-    fun <T : Enum<T>> getEnum(key: U, filter: Predicate<T> = Predicate { true }): T
+    fun <T : Enum<T>> getEnum(key: U, filter: Predicate<T> = Predicates.accept()): T
 
     /**
      * Gets a single enum from a config key, optionally filtering the enum.
@@ -175,7 +176,7 @@ interface BaseEnumConfig<U> where U : ConfigEnum, U : Enum<U>  {
      * @return [T] The enum retrieved from the config, in case it was present and was accepted by the [filter], or the [default] value
      * @since 1.0
      */
-    fun <T : Enum<T>> getEnum(key: U, default: T, filter: Predicate<T> = Predicate { true }): T
+    fun <T : Enum<T>> getEnum(key: U, default: T, filter: Predicate<T> = Predicates.accept()): T
 
     /**
      * Gets a Set of enums from the file, optionally filtering the entries with the given predicate. Keep in mind that the Set will only be cached after the filter is applied, so if you want to be able to retrieve the full set later, use [Iterable.filter] function on site instead.
@@ -187,7 +188,7 @@ interface BaseEnumConfig<U> where U : ConfigEnum, U : Enum<U>  {
      * @return [Set<T>] A Set containing the parsed Enums, or in case the entry was missing, the default Set instead.
      * @since 1.0
      */
-    fun <T : Enum<T>> getEnumSet(key: U, default: Set<T> = key.safeDefault(), clazz: KClass<T>, filter: Predicate<T> = Predicate { true }): Set<T>
+    fun <T : Enum<T>> getEnumSet(key: U, default: Set<T> = key.safeDefault(), clazz: KClass<T>, filter: Predicate<T> = Predicates.accept()): Set<T>
 
     /**
      * Gets a List of enums from the file, optionally filtering the entries with the given predicate. Keep in mind that the List will only be cached after the filter is applied, so if you want to be able to retrieve the full set later, use [Iterable.filter] function on site instead.
@@ -199,7 +200,7 @@ interface BaseEnumConfig<U> where U : ConfigEnum, U : Enum<U>  {
      * @return [List<T>] A List containing the parsed Enums, or in case the entry was missing, the default List instead.
      * @since 1.0
      */
-    fun <T : Enum<T>> getEnumList(key: U, default: List<T> = key.safeDefault(), clazz: KClass<T>, filter: Predicate<T> = Predicate { true }): List<T>
+    fun <T : Enum<T>> getEnumList(key: U, default: List<T> = key.safeDefault(), clazz: KClass<T>, filter: Predicate<T> = Predicates.accept()): List<T>
 
     /**
      * Gets a Pair of Ints containing the <Min, Max> value of that Int range. the range can be just one number, or a range made like "1 - 5"/

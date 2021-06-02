@@ -27,6 +27,7 @@ import com.github.secretx33.secretcfg.core.exception.DifferentCachedTypeExceptio
 import com.github.secretx33.secretcfg.core.manager.YamlManager
 import com.github.secretx33.secretcfg.core.storage.filewatcher.FileModificationType
 import com.github.secretx33.secretcfg.core.storage.filewatcher.FileWatcherEvent
+import com.github.secretx33.secretcfg.core.util.Predicates
 import com.github.secretx33.secretcfg.core.util.RangeParser
 import com.github.secretx33.secretcfg.core.util.extension.values
 import kotlinx.coroutines.CoroutineDispatcher
@@ -57,7 +58,7 @@ abstract class AbstractConfig (
 
     init {
         manager.listener {
-            delay(200L)
+            delay(150L)
             reload()
         }
     }
@@ -209,7 +210,7 @@ abstract class AbstractConfig (
     }
 
     protected fun <T : Enum<T>> cachedEnum(key: String, default: T, transformer: (enum: String) -> T?): T
-        = cachedEnum(key, default, { true }, transformer)
+        = cachedEnum(key, default, Predicates.accept(), transformer)
 
     @Suppress("UNCHECKED_CAST")
     protected fun <T: Any> cachedStringBased(key: String, default: T, transformer: (String) -> T?): T {
@@ -255,14 +256,15 @@ abstract class AbstractConfig (
             if(!manager.contains(key)) return@getOrPut default
             // map the set using the transformer function
             manager.getStringList(key).let(transformer).filterTo(mutableSetOf()) { filter.test(it) }
-        }.let { it as? Set<T> ?: (it as? Iterable<T>)
-            ?.filterTo(mutableSetOf()) { item -> filter.test(item) }
-            ?.also { list -> cache[key] = list }
-            ?: cacheException(key, it, default) }
+        }.let {
+            runCatching { it as Set<T> }.getOrNull()?.also { list -> cache[key] = list }
+                ?: runCatching { it as Iterable<T> }.getOrNull()?.let { iterable -> iterable.toSet().also { set -> cache[key] = set } }
+                ?: cacheException(key, it, default)
+        }
     }
 
     protected fun <T : Any> cachedSet(key: String, default: Set<T>, transformer: (entries: List<String>) -> Collection<T>): Set<T>
-        = filteredCachedSet(key, default, { true }, transformer)
+        = filteredCachedSet(key, default, Predicates.accept(), transformer)
 
     // Get function for Lists
 
@@ -273,13 +275,15 @@ abstract class AbstractConfig (
             if(!manager.contains(key)) return@getOrPut default
             // map the list using the transformer function
             manager.getStringList(key).let(transformer).filter { filter.test(it) }
-        }.let { it as? List<T> ?: (it as? Iterable<T>)
-            ?.filter { item -> filter.test(item) }
-            ?.also { list -> cache[key] = list } ?: cacheException(key, it, default) }
+        }.let {
+            runCatching { it as List<T> }.getOrNull()?.also { list -> cache[key] = list }
+            ?: runCatching { it as Iterable<T> }.getOrNull()?.let { iterable -> iterable.toList().also { list -> cache[key] = list } }
+            ?: cacheException(key, it, default)
+        }
     }
 
     protected fun <T> cachedList(key: String, default: List<T>, transformer: (entries: List<String>) -> Collection<T>): List<T>
-        = filteredCachedList(key, default, { true }, transformer)
+        = filteredCachedList(key, default, Predicates.accept(), transformer)
 
     // Lazy get function for lists
 
@@ -296,7 +300,7 @@ abstract class AbstractConfig (
     }
 
     protected fun <T> cachedList(key: String, default: Supplier<List<T>>, transformer: (entries: List<String>) -> Collection<T>): List<T>
-        = filteredCachedList(key, default, { true }, transformer)
+        = filteredCachedList(key, default, Predicates.accept(), transformer)
 
     // returns a pair of ints containing the <Min, Max> value of that property
     // the range can be just one number, or a range made like "1 - 5"
@@ -353,7 +357,7 @@ abstract class AbstractConfig (
             return@getOrPut values.mapNotNull { range ->
                 RangeParser.parseIntOrNull(range, minValue, maxValue)
                     ?.let { IntRange(it.first, it.second).toHashSet() }
-            }.flatten().filterTo(mutableSetOf()) { it in minValue..maxValue }
+            }.flatten().filterTo(HashSet()) { it in minValue..maxValue }
         }.let { runCatching { it as Set<Int> }.getOrElse { cacheException(key, it, default) } }
     }
 
@@ -364,7 +368,7 @@ abstract class AbstractConfig (
      *
      * @param key String config key of the entry
      * @param default T the default value of the entry
-     * @param got Any? what actually came when method [YamlManager#get()][YamlManager.get] was invoked
+     * @param got Any? what actually came when method [YamlManager.get()][YamlManager.get] was invoked
      */
     protected fun <T : Any> warnWrongType(key: String, got: Any?, default: T) {
         logger.warning(CONFIG_TYPE_MISMATCH_WITH_DEFAULT.format(file, key, default::class.simpleName, got?.let { it::class.simpleName } ?: "null", file, default))
