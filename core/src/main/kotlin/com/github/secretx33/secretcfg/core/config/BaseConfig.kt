@@ -34,6 +34,7 @@ import kotlin.reflect.KClass
 
 /**
  * Base interface to expose cached methods to the consumers
+ *
  * @since 1.0
  */
 interface BaseConfig {
@@ -70,7 +71,8 @@ interface BaseConfig {
      * Adds a listener that will listen to all file modifications of specified types.
      *
      * @param modificationType Set<FileModificationType> A set containing all types of file modification the listener needs to listen to, **cannot be empty**
-     * @param listener Consumer<FileWatcherEvent> A listener that will consume all specified event types of this file, runs on [Dispatchers.Default]
+     * @param scope CoroutineDispatcher The scope in which the listener will run on
+     * @param listener SuspendFunction1<FileWatcherEvent, Unit> A listener that will consume all specified event types of this file
      * @since 1.0
      */
     fun listener(modificationType: Set<FileModificationType> = FileModificationType.CREATE_AND_MODIFICATION, scope: CoroutineDispatcher = Dispatchers.Default, listener: suspend (FileWatcherEvent) -> Unit)
@@ -169,7 +171,7 @@ interface BaseConfig {
     /**
      * Retrieves a generic value from the config file, or default value if the key is missing
      *
-     * @param key [String] Where the value is at
+     * @param key String Where the value is at
      * @param default [T] A default value in case the specified [key] is missing
      * @return [T] The retrieved value, or [default] in case the key was missing
      * @since 1.0
@@ -187,9 +189,9 @@ interface BaseConfig {
     /**
      * Retrieves a Boolean value from the config file, or the default value if the key is missing.
      *
-     * @param key [String] Where the Boolean is at
-     * @param default [Boolean] A default value in case the specified [key] is missing
-     * @return [Boolean] The retrieved Boolean, or [default] in case the key was missing
+     * @param key String Where the Boolean is at
+     * @param default Boolean A default value in case the specified [key] is missing
+     * @return Boolean The retrieved Boolean, or [default] in case the key was missing
      * @since 1.0
      */
     fun getBoolean(key: String, default: Boolean): Boolean
@@ -206,11 +208,11 @@ interface BaseConfig {
 
      * Retrieves an Int value from the config file, or the default value if the key is missing.
      *
-     * @param key [String] Where the Int is at
-     * @param default [Int] A default value in case the specified [key] is missing
-     * @param minValue [Int] Minimum value that can be returned by this function
-     * @param maxValue [Int] Maximum value that can be returned by this function
-     * @return [Int] The retrieved value, or [default] in case the key was missing
+     * @param key String Where the Int is at
+     * @param default Int A default value in case the specified [key] is missing
+     * @param minValue Int Minimum value that can be returned by this function
+     * @param maxValue Int Maximum value that can be returned by this function
+     * @return Int The retrieved value, or [default] in case the key was missing
      * @since 1.0
      */
     fun getInt(key: String, default: Int = 0, minValue: Int = 0, maxValue: Int = Int.MAX_VALUE): Int
@@ -226,11 +228,11 @@ interface BaseConfig {
     /**
     * Retrieves a Float value from the config file, or the default value if the key is missing.
     *
-    * @param key [String] Where the Float is at
-    * @param default [Float] A default value in case the specified [key] is missing
-    * @param minValue [Float] Minimum value that can be returned by this function
-    * @param maxValue [Float] Maximum value that can be returned by this function
-    * @return [Float] The retrieved value, or [default] in case the key was missing
+    * @param key String Where the Float is at
+    * @param default Float A default value in case the specified [key] is missing
+    * @param minValue Float Minimum value that can be returned by this function
+    * @param maxValue Float Maximum value that can be returned by this function
+    * @return Float The retrieved value, or [default] in case the key was missing
     * @since 1.0
     */
     fun getFloat(key: String, default: Float = 0f, minValue: Float = 0f, maxValue: Float = Float.MAX_VALUE): Float
@@ -246,11 +248,11 @@ interface BaseConfig {
     /**
      * Retrieves a Double value from the config file, or the default value if the key is missing.
      *
-     * @param key [String] Where the Double is at
-     * @param default [Double] A default value in case the specified [key] is missing
-     * @param minValue [Double] Minimum value that can be returned by this function
-     * @param maxValue [Double] Maximum value that can be returned by this function
-     * @return [Double] The retrieved value, or [default] in case the key was missing
+     * @param key String Where the Double is at
+     * @param default Double A default value in case the specified [key] is missing
+     * @param minValue Double Minimum value that can be returned by this function
+     * @param maxValue Double Maximum value that can be returned by this function
+     * @return Double The retrieved value, or [default] in case the key was missing
      * @since 1.0
      */
     fun getDouble(key: String, default: Double = 0.0, minValue: Double = 0.0, maxValue: Double = Double.MAX_VALUE): Double
@@ -266,9 +268,9 @@ interface BaseConfig {
     /**
      * Retrieves a String from the config file, or the default value if the key is missing.
      *
-     * @param key [String] Where the String is at
-     * @param default [String] A default value in case the specified [key] is missing
-     * @return [String] The retrieved string, or [default] in case the key was missing
+     * @param key String Where the String is at
+     * @param default String A default value in case the specified [key] is missing
+     * @return String The retrieved string, or [default] in case the key was missing
      * @since 1.0
      */
     fun getString(key: String, default: String): String
@@ -276,9 +278,10 @@ interface BaseConfig {
     /**
      * Retrieves a string list from the config file.
      *
-     * @param key [String] Where the string list is stored at
+     * @param key String Where the string list is stored at
      * @param default [List<String>] A fallback in case the specified [key] is missing
-     * @return [List<String>] A list containing the strings retrieved from the config file, or the [default] list in case the key was missing
+     * @return [List<String>] A list containing the strings retrieved from the config file, or the
+     * [default] list in case the key was missing
      * @since 1.0
      */
     fun getStringList(key: String, default: List<String> = emptyList()): List<String>
@@ -286,9 +289,10 @@ interface BaseConfig {
     /**
      * Retrieves a string set from the config file.
      *
-     * @param key [String] Where the string set is stored at
+     * @param key String Where the string set is stored at
      * @param default [Set<String>] A fallback in case the specified [key] is missing
-     * @return [Set<String>] A set containing the strings retrieved from the config file, or the [default] set in case the key was missing
+     * @return [Set<String>] A set containing the strings retrieved from the config file, or the
+     * [default] set in case the key was missing
      * @since 1.0
      */
     fun getStringSet(key: String, default: Set<String> = emptySet()): Set<String>
@@ -296,47 +300,54 @@ interface BaseConfig {
     /**
      * Gets a single enum from a config key, optionally filtering the enum.
      *
-     * @param key [String] Where the enum is stored at
+     * @param key String Where the enum is stored at
      * @param default [T] A default value in case the entry is missing or invalid
-     * @param filter [Predicate<T>] A predicate to filter the item retrieved from the config
-     * @return [T] The enum retrieved from the config, in case it was present and was accepted by the [filter], or the [default] value otherwise
+     * @param filter Predicate<T> A predicate to filter the item retrieved from the config
+     * @return [T] The enum retrieved from the config, in case it was present and was accepted
+     * by the [filter], or the [default] value otherwise
      * @since 1.0
      */
     fun <T : Enum<T>> getEnum(key: String, default: T, filter: Predicate<T> = Predicates.accept()): T
 
     /**
-     * Gets a Set of enums from the file, optionally filtering the entries with the given predicate. Keep in mind that the Set will only be cached after the filter is applied, so if you want to be able to retrieve the full set later, use [Iterable.filter] function on site instead.
+     * Gets a Set of enums from the file, optionally filtering the entries with the given predicate.
+     * Keep in mind that the Set will only be cached after the filter is applied, so if you want to be
+     * able to retrieve the full set later, use [Iterable.filter] function on site instead.
      *
-     * @param key [String] Where the enum set is stored at
-     * @param default [Set<T>] A default set containing default values in case the
-     * @param clazz [KClass<T>] The enum class you want to get the values from
-     * @param filter [Predicate<T>] A predicate to filter certain values, be aware that the user will be warned if your predicate reject some of their items
-     * @return [Set<T>] A Set containing the parsed Enums, or in case the entry was missing, the default Set instead.
+     * @param key String Where the enum set is stored at
+     * @param default Set<T> A default set containing default values in case the
+     * @param clazz KClass<T>The enum class you want to get the values from
+     * @param filter Predicate<T> A predicate to filter certain values, be aware that the user will be warned
+     * if your predicate reject some of their items
+     * @return Set<T> A Set containing the parsed Enums, or in case the entry was missing, the default Set instead.
      * @since 1.0
      */
     fun <T : Enum<T>> getEnumSet(key: String, default: Set<T> = emptySet(), clazz: KClass<T>, filter: Predicate<T> = Predicates.accept()): Set<T>
 
 
     /**
-     * Gets a List of enums from the file, optionally filtering the entries with the given predicate. Keep in mind that the List will only be cached after the filter is applied, so if you want to be able to retrieve the full set later, use [Iterable.filter] function on site instead.
+     * Gets a List of enums from the file, optionally filtering the entries with the given predicate.
+     * Keep in mind that the List will only be cached after the filter is applied, so if you want to be
+     * able to retrieve the full set later, use [Iterable.filter] function on site instead.
      *
-     * @param key [String] Where the enum list is stored at
-     * @param default [List<T>] A default list containing default values in case the
-     * @param clazz [KClass<T>] The enum class you want to get the values from
-     * @param filter [Predicate<T>] A predicate to filter certain values, be aware that the user will be warned if your predicate reject some of their items
-     * @return [List<T>] A List containing the parsed Enums, or in case the entry was missing, the default List instead.
+     * @param key String Where the enum list is stored at
+     * @param default List<T> A default list containing default values in case the
+     * @param clazz KClass<T>The enum class you want to get the values from
+     * @param filter Predicate<T> A predicate to filter certain values, be aware that the user will be warned
+     * if your predicate reject some of their items
+     * @return List<T> A List containing the parsed Enums, or in case the entry was missing, the default List instead.
      * @since 1.0
      */
     fun <T : Enum<T>> getEnumList(key: String, default: List<T> = emptyList(), clazz: KClass<T>, filter: Predicate<T> = Predicates.accept()): List<T>
 
     /**
-     * Gets a Pair of Ints containing the <Min, Max> value of that Int range. the range can be just one number, or a range made like "1 - 5"/
+     * Gets a Pair of Ints containing the <Min, Max> value of that Int range. the range can be just one number, or a range made like "1 - 5".
      *
-     * @param key [String] Where the range is stored at
-     * @param default [Int] A fallback value in case the value in the path specified is missing or incorrect
-     * @param minValue [Int] Limits the minimum value in the pair to the specified value
-     * @param maxValue [Int] Optionally, limits the maximum value in the pair to the specified value
-     * @return [Pair<Int, Int>] A pair containing the <Min, Max> of the Int range in the key
+     * @param key String Where the range is stored at
+     * @param default Int A fallback value in case the value in the path specified is missing or incorrect
+     * @param minValue Int Limits the minimum value in the pair to the specified value
+     * @param maxValue Int Optionally, limits the maximum value in the pair to the specified value
+     * @return Pair<Int, Int> A pair containing the <Min, Max> of the Int range in the key
      * @since 1.0
      */
     fun getIntRange(key: String, default: Int = 0, minValue: Int = 0, maxValue: Int = Int.MAX_VALUE): Pair<Int, Int>
@@ -344,11 +355,11 @@ interface BaseConfig {
     /**
      * Gets a Pair of Doubles containing the <Min, Max> value of that Double range. The range can be just one number, or a range made like "1 - 5".
      *
-     * @param key [String] Where the range is stored at
-     * @param default [Double] A fallback value in case the value in the path specified is missing or incorrect
-     * @param minValue [Double] Limits the minimum value in the pair to the specified value
-     * @param maxValue [Double] Optionally, limits the maximum value in the pair to the specified value
-     * @return [Pair<Double, Double>] A pair containing the <Min, Max> of the Double range in the key
+     * @param key String Where the range is stored at
+     * @param default Double A fallback value in case the value in the path specified is missing or incorrect
+     * @param minValue Double Limits the minimum value in the pair to the specified value
+     * @param maxValue Double Optionally, limits the maximum value in the pair to the specified value
+     * @return Pair<Double, Double> A pair containing the <Min, Max> of the Double range in the key
      * @since 1.0
      */
     fun getDoubleRange(key: String, default: Double = 0.0, minValue: Double = 0.0, maxValue: Double = Double.MAX_VALUE): Pair<Double, Double>
@@ -367,9 +378,9 @@ interface BaseConfig {
     fun getIntSequence(key: String, default: Set<Int> = emptySet(), minValue: Int = 0, maxValue: Int = Int.MAX_VALUE): Set<Int>
 
     /**
-     * Do the same as the function [getIntSequence], but read the ranges from a string list, instead of a single entry.
-     * A range list containing "0-5" and "10-15" would produce a set equivalent to `setOf(0..5) + setOf(10..15)`, sorted
-     * by their natural order.
+     * Do the same as the function [getIntSequence], but read the ranges from a string list, instead
+     * of a single entry. A range list containing "0-5" and "10-15" would produce a set equivalent to
+     * `setOf(0..5) + setOf(10..15)`, unsorted.
      *
      * @param key String Where the range is stored at
      * @param default Set<Int> A fallback value in case the range in the path specified is missing or incorrect
