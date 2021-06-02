@@ -24,6 +24,7 @@
 package com.github.secretx33.secretcfg.core.storage.filewatcher
 
 import com.github.secretx33.secretcfg.core.util.ExpiringMap
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -34,6 +35,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.Path
 import kotlin.io.path.absolute
+import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.relativeTo
@@ -56,10 +58,9 @@ class FileWatcher (
     private val watchedLocations = ConcurrentHashMap<Path, WatchedLocation>()
 
     init {
-        if(!this.basePath.exists()) basePath.toFile().mkdirs()
+        if(!this.basePath.exists()) basePath.createDirectories()
         require(this.basePath.exists()) { "basePath needs to exist, current it doesn't" }
         require(this.basePath.isDirectory()) { "basePath needs to be a directory, but it isn't" }
-        require(this.basePath.isAbsolute) { "basePath needs to be absolute" }
         super.registerRecursively(this.basePath)
         super.runEventProcessingLoop()
     }
@@ -73,8 +74,8 @@ class FileWatcher (
     fun getWatcher(path: Path): WatchedLocation {
         val relativePath = when {
             path.isAbsolute -> path.relativeTo(basePath)
-            path.startsWith(basePath) -> path
-            else -> basePath.resolve(path).relativeTo(basePath)
+            path.startsWith(basePath) -> path.absolute().relativeTo(basePath)
+            else -> path
         }
         return watchedLocations.getOrPut(relativePath) { WatchedLocation(basePath) }
     }
@@ -86,8 +87,8 @@ class FileWatcher (
      * @param listener suspend (FileWatcherEvent) -> Unit A shortcut to add a listener for when a file is updated
      * @return WatchedLocation the watched location
      */
-    fun getWatcher(path: Path, modificationTypes: Set<FileModificationType>, listener: suspend (FileWatcherEvent) -> Unit): WatchedLocation
-            = getWatcher(path).apply { addListener(modificationTypes, listener) }
+    fun getWatcher(path: Path, modificationTypes: Set<FileModificationType>, scope: CoroutineDispatcher = Dispatchers.Default, listener: suspend (FileWatcherEvent) -> Unit): WatchedLocation
+        = getWatcher(path).apply { addListener(modificationTypes, scope, listener) }
 
     /**
      * Gets a [WatchedLocation] instance for the base path.
@@ -96,8 +97,8 @@ class FileWatcher (
      */
     fun getRootWatcher(): WatchedLocation = getWatcher(basePath)
 
-    fun getRootWatcher(modificationTypes: Set<FileModificationType>, listener: suspend (FileWatcherEvent) -> Unit): WatchedLocation
-        = getRootWatcher().apply { addListener(modificationTypes, listener) }
+    fun getRootWatcher(modificationTypes: Set<FileModificationType>, scope: CoroutineDispatcher = Dispatchers.Default, listener: suspend (FileWatcherEvent) -> Unit): WatchedLocation
+        = getWatcher(basePath, modificationTypes, scope, listener)
 
     /**
      * Gets a [WatchedLocation] instance for the given path
@@ -107,8 +108,8 @@ class FileWatcher (
      */
     fun getWatcher(path: String): WatchedLocation = getWatcher(Path(path))
 
-    fun getWatcher(path: String, modificationTypes: Set<FileModificationType>, listener: suspend (FileWatcherEvent) -> Unit): WatchedLocation
-        = getWatcher(path).apply { addListener(modificationTypes, listener) }
+    fun getWatcher(path: String, modificationTypes: Set<FileModificationType>, scope: CoroutineDispatcher = Dispatchers.Default, listener: suspend (FileWatcherEvent) -> Unit): WatchedLocation
+        = getWatcher(Path(path), modificationTypes, scope, listener)
 
     override fun processEvent(event: FileWatcherEvent) {
         // return if there's no element
@@ -145,7 +146,7 @@ class FileWatcher (
             callbacks.asSequence()
                 .filter { it.acceptTypes.contains(event.type) && !recentlyConsumedFiles.put(it.uniqueId, event.file.relativeTo(basePath)) }
                 .forEach {
-                    CoroutineScope(Dispatchers.Default).launch {
+                    CoroutineScope(it.scope).launch {
                         try {
                             it.listener(event)
                         } catch (e: Throwable) {
@@ -167,12 +168,13 @@ class FileWatcher (
         /**
          * Register a listener.
          *
-         * @param listener the listener
+         * @param modificationTypes Set<FileModificationType> What types of modification does this consumer wants to consume
+         * @param listener SuspendFunction1<FileWatcherEvent, Unit> A listener that will consume all specified event types of this file, runs on the provided scope
          */
-        fun addListener(modificationTypes: Set<FileModificationType>, listener: suspend (FileWatcherEvent) -> Unit) {
+        fun addListener(modificationTypes: Set<FileModificationType>, scope: CoroutineDispatcher = Dispatchers.Default, listener: suspend (FileWatcherEvent) -> Unit) {
             require(modificationTypes.isNotEmpty()) { "You cannot register a listener that doesn't listen to any modifications" }
 
-            callbacks.add(FileWatcherEventConsumer(listener, modificationTypes.asEnumSet()))
+            callbacks.add(FileWatcherEventConsumer(modificationTypes.asEnumSet(), scope, listener))
         }
 
         private fun Set<FileModificationType>.asEnumSet() = this as? EnumSet<FileModificationType> ?: EnumSet.copyOf(this)

@@ -25,8 +25,8 @@
 
 package com.github.secretx33.secretcfg.core.storage.filewatcher
 
-import com.github.secretx33.secretcfg.core.util.extension.unmodifiable
 import java.nio.file.Path
+import java.util.Collections
 import java.util.EnumSet
 import kotlin.io.path.name
 import kotlin.io.path.nameWithoutExtension
@@ -35,9 +35,8 @@ import kotlin.io.path.nameWithoutExtension
  * Contains data about an event, what file was changed, what type of change was,
  * and two handy extension function to quickly get the filename.
  *
- * @property file Path The path to the modified file.
- * @property type FileModificationType
- * @property fileName String
+ * @property file Path The path to the modified file
+ * @property type FileModificationType What type of modification is happening on the file
  * @since 1.0
  */
 data class FileWatcherEvent (
@@ -70,7 +69,7 @@ enum class FileModificationType {
     DELETE,
 
     /**
-     * Triggered to indicate lost or discarded events. Unless you know you need this, you can safely ignore this entry
+     * Triggered to indicate lost or discarded events. Unless you know you need this, you can safely ignore this entry.
      */
     OVERFLOW;
 
@@ -89,6 +88,6 @@ enum class FileModificationType {
     val isNotCreateOrDelete get() = !isCreateOrDelete
 
     companion object {
-        val CREATE_AND_MODIFICATION: Set<FileModificationType> = EnumSet.of(CREATE, MODIFY).unmodifiable()
+        val CREATE_AND_MODIFICATION: Set<FileModificationType> = Collections.unmodifiableSet(EnumSet.of(CREATE, MODIFY))
     }
 }

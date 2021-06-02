@@ -26,6 +26,8 @@ package com.github.secretx33.secretcfg.core.config
 import com.github.secretx33.secretcfg.core.storage.filewatcher.FileModificationType
 import com.github.secretx33.secretcfg.core.storage.filewatcher.FileWatcherEvent
 import com.github.secretx33.secretcfg.core.util.Predicates
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import java.nio.file.Path
 import java.util.function.Predicate
 import kotlin.reflect.KClass
@@ -71,7 +73,7 @@ interface BaseConfig {
      * @param listener Consumer<FileWatcherEvent> A listener that will consume all specified event types of this file, runs on [Dispatchers.Default]
      * @since 1.0
      */
-    fun listener(modificationType: Set<FileModificationType>, listener: suspend (FileWatcherEvent) -> Unit)
+    fun listener(modificationType: Set<FileModificationType> = FileModificationType.CREATE_AND_MODIFICATION, scope: CoroutineDispatcher = Dispatchers.Default, listener: suspend (FileWatcherEvent) -> Unit)
 
     /**
      * Checks in the file if a certain key is present

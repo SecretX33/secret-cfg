@@ -25,15 +25,14 @@ package com.github.secretx33.secretcfg.core.config
 
 import com.github.secretx33.secretcfg.core.exception.DifferentCachedTypeException
 import com.github.secretx33.secretcfg.core.manager.YamlManager
-import com.github.secretx33.secretcfg.core.storage.FileWatcherProvider
 import com.github.secretx33.secretcfg.core.storage.filewatcher.FileModificationType
 import com.github.secretx33.secretcfg.core.storage.filewatcher.FileWatcherEvent
 import com.github.secretx33.secretcfg.core.util.RangeParser
 import com.github.secretx33.secretcfg.core.util.extension.values
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.nio.file.Path
 import java.util.EnumSet
 import java.util.concurrent.ConcurrentHashMap
@@ -55,60 +54,51 @@ abstract class AbstractConfig (
 
     protected val manager = YamlManager(plugin, dataFolder, path, logger, options)
     protected val cache = ConcurrentHashMap<String, Any>()
-    private val watcher = FileWatcherProvider.get(dataFolder).getWatcher(manager.relativePath)
 
     init {
-        watcher.addListener(watcherDefaultTypes) {
-            CoroutineScope(Dispatchers.IO).launch {
-                delay(200L)
-                reload()
-            }
+        manager.listener {
+            delay(200L)
+            reload()
         }
     }
 
-    override suspend fun reload() {
+    override suspend fun reload() = withContext(Dispatchers.IO) {
         if(manager.reload()) cache.clear()
     }
 
-    override fun listener(modificationType: Set<FileModificationType>, listener: suspend (FileWatcherEvent) -> Unit)
-        = watcher.addListener(modificationType, listener)
+    override fun listener(modificationType: Set<FileModificationType>, scope: CoroutineDispatcher, listener: suspend (FileWatcherEvent) -> Unit)
+        = manager.listener(modificationType, scope, listener)
 
     override fun has(key: String): Boolean = manager.contains(key)
 
     override fun contains(key: String): Boolean = has(key)
 
     override fun set(key: String, value: Any) {
-        watcher.recordChange(path)
         manager.set(key, value)
         cache[key] = value
     }
 
     override fun setBoolean(key: String, value: Boolean) {
-        watcher.recordChange(path)
         manager.setBoolean(key, value)
         cache[key] = value
     }
 
     override fun setInt(key: String, value: Int) {
-        watcher.recordChange(path)
         manager.setInt(key, value)
         cache[key] = value
     }
 
     override fun setDouble(key: String, value: Double) {
-        watcher.recordChange(path)
         manager.setDouble(key, value)
         cache[key] = value
     }
 
     override fun setString(key: String, value: String) {
-        watcher.recordChange(path)
         manager.setString(key, value)
         cache[key] = value
     }
 
     override fun setStringList(key: String, value: Collection<String>) {
-        watcher.recordChange(path)
         manager.setStringList(key, value)
         cache[key] = value
     }
@@ -397,7 +387,5 @@ abstract class AbstractConfig (
         const val INVALID_ENUM_ENTRY = "[%s] On key '%s', value passed '%s' is invalid, please fix this entry in the %s and reload the configs."
         const val INVALID_ENUM_ENTRY_WITH_DEFAULT = "[%s] Error while trying to get key '%s', value passed '%s' is invalid, please fix this entry in the %s and reload the configs, temporarily defaulting to %s."
         const val DIFFERENT_CACHED_TYPE = "Tried to override previous cached value for key '%s' type '%s' with '%s' in file '%s', please check all your get methods for that key and make sure they're all requiring the same type. If you are seeing this error and are not the developer, you should copy this message and send it to they so they can fix the issue."
-
-        val watcherDefaultTypes: Set<FileModificationType> = EnumSet.of(FileModificationType.CREATE, FileModificationType.MODIFY)
     }
 }

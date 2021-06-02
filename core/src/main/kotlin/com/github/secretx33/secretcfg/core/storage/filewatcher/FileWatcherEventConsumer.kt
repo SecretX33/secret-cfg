@@ -23,21 +23,35 @@
  */
 package com.github.secretx33.secretcfg.core.storage.filewatcher
 
+import kotlinx.coroutines.CoroutineDispatcher
 import java.util.UUID
 
 /**
  * Represents a consumer and what type of modifications it want to listen for.
  *
- * @property listener Consumer<FileWatcherEvent> The consumer to be ran when an event happens
  * @property acceptTypes Set<FileModificationType> What types of modification does this consumer wants to consume
+ * @property scope CoroutineDispatcher The scope the listener should ran on
+ * @property listener SuspendFunction1<FileWatcherEvent, Unit>  The consumer to be ran when an event happens
  * @property uniqueId UUID A random, unique identifier to distinguish between listeners
  * @since 1.0
  */
-internal data class FileWatcherEventConsumer (
-    val listener: suspend (FileWatcherEvent) -> Unit,
+internal class FileWatcherEventConsumer (
     val acceptTypes: Set<FileModificationType>,
+    val scope: CoroutineDispatcher,
+    val listener: suspend (FileWatcherEvent) -> Unit,
 ) {
     val uniqueId: UUID = UUID.randomUUID()
 
     init { require(acceptTypes.isNotEmpty()) { "acceptTypes cannot be empty" } }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if(other !is FileWatcherEventConsumer) return false
+
+        return uniqueId == other.uniqueId
+    }
+
+    override fun hashCode(): Int = uniqueId.hashCode()
+
+    override fun toString(): String = "FileWatcherEventConsumer(listener=$listener, scope=$scope, acceptTypes=$acceptTypes, uniqueId=$uniqueId)"
 }

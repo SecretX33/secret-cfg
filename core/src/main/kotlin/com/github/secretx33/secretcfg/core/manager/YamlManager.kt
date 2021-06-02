@@ -25,7 +25,10 @@ package com.github.secretx33.secretcfg.core.manager
 
 import com.github.secretx33.secretcfg.core.config.ConfigOptions
 import com.github.secretx33.secretcfg.core.storage.FileWatcherProvider
+import com.github.secretx33.secretcfg.core.storage.filewatcher.FileModificationType
+import com.github.secretx33.secretcfg.core.storage.filewatcher.FileWatcherEvent
 import com.github.secretx33.secretcfg.core.util.extension.nameEndsWithAny
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -74,7 +77,7 @@ class YamlManager (
     val relativePath: Path = if(path.nameEndsWithAny(".yml", ".yaml")) path else Path("$path.yml")
     val file: Path = dataFolder.resolve(relativePath).absolute()
 
-    private val watcher = FileWatcherProvider.get(dataFolder).getWatcher(relativePath)
+    private val watcher by lazy { FileWatcherProvider.get(dataFolder).getWatcher(relativePath) }
 
     val fileName: String
         get() = relativePath.name
@@ -91,6 +94,12 @@ class YamlManager (
             false
         }
     }
+
+    fun listener (
+        modificationType: Set<FileModificationType> = FileModificationType.CREATE_AND_MODIFICATION,
+        scope: CoroutineDispatcher = Dispatchers.Default,
+        listener: suspend (FileWatcherEvent) -> Unit
+    ) = watcher.addListener(modificationType, scope,listener)
 
     private fun Path.createIfMissing() {
         if(exists()) return
@@ -170,6 +179,7 @@ class YamlManager (
                 val oldFile = file.getLines()
                 val comments = parseFileComments(oldFile)
                 // commit all changes made to the file, erasing the comments in the process
+                @Suppress("BlockingMethodInNonBlockingContext")
                 loader.save(root)
                 // re-add comments to the file
                 val newFile = addCommentsToFile(comments)

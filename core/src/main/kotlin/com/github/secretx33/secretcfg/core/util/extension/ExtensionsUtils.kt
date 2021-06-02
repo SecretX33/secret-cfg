@@ -25,7 +25,6 @@ package com.github.secretx33.secretcfg.core.util.extension
 
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.Collections
 import kotlin.io.path.name
 import kotlin.reflect.KClass
 
@@ -39,5 +38,3 @@ fun <T : Enum<T>> KClass<out T>.values(): Array<out T> = java.enumConstants
 internal fun Path.nameEndsWithAny(vararg others: String): Boolean = others.isEmpty() || others.any { name.endsWith(it, ignoreCase = true) }
 
 internal fun String.toPath() = Paths.get(this)
-
-internal fun <T> Set<T>.unmodifiable(): Set<T> = Collections.unmodifiableSet(this)
