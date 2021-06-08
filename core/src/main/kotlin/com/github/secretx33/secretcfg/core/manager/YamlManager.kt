@@ -30,12 +30,14 @@ import com.github.secretx33.secretcfg.core.storage.filewatcher.FileWatcherEvent
 import com.github.secretx33.secretcfg.core.util.extension.nameEndsWithAny
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.spongepowered.configurate.CommentedConfigurationNode
 import org.spongepowered.configurate.yaml.NodeStyle
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader
+import java.io.IOException
 import java.io.InputStream
 import java.nio.file.Path
 import java.util.logging.Level
@@ -70,26 +72,26 @@ class YamlManager (
     private val logger: Logger,
     private val options: ConfigOptions,
 ) {
+    val relativePath: Path = if(path.nameEndsWithAny(".yml", ".yaml")) path else Path("$path.yml")
+    val file: Path = dataFolder.resolve(relativePath).absolute()
+
     private val saveLock = Mutex()
     private val loader = newYamlLoader()
     private lateinit var root: CommentedConfigurationNode
-
-    val relativePath: Path = if(path.nameEndsWithAny(".yml", ".yaml")) path else Path("$path.yml")
-    val file: Path = dataFolder.resolve(relativePath).absolute()
 
     private val watcher by lazy { FileWatcherProvider.get(dataFolder).getWatcher(relativePath) }
 
     val fileName: String
         get() = relativePath.name
 
-    init { reload() }
+    init { runBlocking { reload() } }
 
-    fun reload(): Boolean {
-        return try {
+    suspend fun reload(): Boolean = withContext(Dispatchers.IO) {
+        try {
             file.createIfMissing()
             root = loader.load()
             true
-        } catch (e: Exception) {
+        } catch (e: IOException) {
             logger.log(Level.SEVERE, "Error while reloading file '$fileName'", e)
             false
         }
@@ -104,7 +106,7 @@ class YamlManager (
     private fun Path.createIfMissing() {
         if(exists()) return
 
-        createDirectories()
+        parent?.createDirectories()
         createFile()
         if(!options.copyDefault) return
 
