@@ -84,6 +84,9 @@ enum class FileModificationType {
     val isCreateOrModify get() = isCreate || isModify
     val isNotCreateOrModify get() = !isCreateOrModify
 
+    val isModifyOrDelete get() = isModify || isDelete
+    val isNotModifyOrDelete get() = !isModifyOrDelete
+
     val isCreateOrDelete get() = isCreate || isDelete
     val isNotCreateOrDelete get() = !isCreateOrDelete
 
