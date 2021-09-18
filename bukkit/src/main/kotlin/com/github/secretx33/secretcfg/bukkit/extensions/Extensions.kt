@@ -23,6 +23,14 @@
  */
 package com.github.secretx33.secretcfg.bukkit.extensions
 
+import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
 
-internal val ItemStack.isAir: Boolean get() = type.isItem
+internal val ItemStack.isAir: Boolean
+    get() = try { 
+        type.isAir
+    } catch(e: NoSuchMethodError) {
+        // catches the exception thrown when
+        // using bukkit API version < 1.14.4
+        type == Material.AIR
+    }
